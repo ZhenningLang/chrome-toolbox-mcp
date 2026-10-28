@@ -12,6 +12,8 @@ const groupShape = {
 };
 const group = z.object(groupShape);
 const urlList = z.array(z.string().url()).min(1).max(100);
+// Existing Chrome titles are not constrained by our new-group input limit.
+const backupTabs = z.array(z.object({ url: z.string().url(), group: group.extend({ title: z.string().optional(), id: z.number().int(), windowId: z.number().int() }).nullable().optional() })).max(500);
 
 export function registerTabs(register, bridge) {
   register("tabs_list", { description: "List tabs and groups by window.", inputSchema: { windowId: z.number().int().optional() }, annotations: { readOnlyHint: true } },
@@ -23,7 +25,7 @@ export function registerTabs(register, bridge) {
   }, async ({ backupPath, urls, ...options }) => {
     if (backupPath === undefined) return bridge.call("tabs.open", { urls, ...options });
     const backup = JSON.parse(readFileSync(backupPath, "utf8"));
-    const entries = z.array(z.object({ url: z.string().url(), group: group.extend({ id: z.number().int(), windowId: z.number().int() }).nullable().optional() })).max(500).parse(backup.tabs);
+    const entries = backupTabs.parse(backup.tabs);
     const wanted = urls ? new Set(urls) : null;
     return bridge.call("tabs.open", { entries: entries.filter((t) => !wanted || wanted.has(t.url)), ...options });
   });
@@ -44,6 +46,8 @@ export function registerTabs(register, bridge) {
   }, async ({ tabIds }) => {
     const ids = [...new Set(tabIds)];
     const tabs = await bridge.call("tabs.snapshot", { tabIds: ids });
+    try { backupTabs.parse(tabs); }
+    catch (err) { throw new Error(`cannot close tabs: snapshot is not restorable: ${err.message}`); }
     ensureHome(bridge.homeDir);
     const backupPath = join(bridge.homeDir, "backups", `tabs-${new Date().toISOString().replace(/[:.]/g, "-")}-${randomUUID()}.json`);
     writeFileSync(backupPath, JSON.stringify({ createdAt: new Date().toISOString(), count: tabs.length, tabs }, null, 2), { mode: 0o600, flag: "wx" });

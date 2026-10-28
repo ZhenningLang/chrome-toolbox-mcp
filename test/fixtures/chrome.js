@@ -23,10 +23,12 @@ export function fakeChrome() {
         const t = { id: nextTab++, windowId: p.windowId ?? 1, index: tabs.size, title: p.url, url: p.url, groupId: -1, pinned: false, active: p.active, lastAccessed: 1000 };
         tabs.set(t.id, t); return t;
       },
-      group: async ({ tabIds, groupId }) => {
-        calls.push(["tabs.group", { tabIds, groupId }]);
+      group: async (params) => {
+        const { tabIds, groupId, createProperties } = params;
+        calls.push(["tabs.group", params]);
         const id = groupId ?? nextGroup++;
-        if (!groups.has(id)) groups.set(id, { id, windowId: tabs.get(tabIds[0]).windowId, title: "", color: "grey", collapsed: false });
+        // Chrome defaults new groups to the current window (1 in this fixture).
+        if (!groups.has(id)) groups.set(id, { id, windowId: createProperties?.windowId ?? 1, title: "", color: "grey", collapsed: false });
         tabIds.forEach((t) => { tabs.get(t).groupId = id; });
         return id;
       },

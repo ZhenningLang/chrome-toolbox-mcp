@@ -36,7 +36,7 @@ export class Bridge {
     this.extensionWaiters = [];
     this.hubSocket = null; // peer: socket to the hub
     this.pending = new Map(); // id -> {resolve, reject, timer}
-    this.capabilityState = new CapabilityState(homeDir);
+    this.capabilityState = new CapabilityState(homeDir, log);
     this.peers = new Set();
     this.closed = false;
     this.connecting = null;
@@ -53,7 +53,12 @@ export class Bridge {
       if (err.code !== "EADDRINUSE") throw err;
       this.mode = "peer";
       this.log(`port ${this.port} in use, running as peer`);
-      await this.#connectToHub();
+      try { await this.#connectToHub(); }
+      catch (err) {
+        this.capabilityState.set(["readingList"], false);
+        this.log(`hub subscription unavailable; using readingList: ${err.message}`);
+        this.#scheduleReconnect();
+      }
     }
   }
 
@@ -136,8 +141,8 @@ export class Bridge {
       const msg = safeParse(raw);
       if (!msg) return;
       if (msg.type === "ping") return ws.send(JSON.stringify({ type: "pong" }));
-      if (ws !== this.extension) return;
       if (msg.type === "capabilities" || (msg.type === "hello" && msg.role === "extension")) {
+        if (ws !== this.extension) return;
         try {
           this.capabilityState.set(msg.type === "hello" ? (msg.capabilities ?? ["readingList"]) : msg.enabled);
           const update = JSON.stringify({ type: "capabilities", enabled: this.capabilityState.enabled });
@@ -212,7 +217,7 @@ export class Bridge {
         catch (err) { this.log(`hub capabilities rejected: ${err.message}`); }
       } else this.#settle(msg);
     });
-    await new Promise((resolve, reject) => {
+    try { await new Promise((resolve, reject) => {
       const timer = setTimeout(() => { ws.terminate(); reject(new Error("timed out connecting to hub")); }, 5000);
       const fail = (err) => {
         clearTimeout(timer);
@@ -226,7 +231,10 @@ export class Bridge {
         if (safeParse(raw)?.type === "welcome") resolve();
         else reject(new Error("hub refused connection"));
       });
-    });
+    }); } catch (err) {
+      ws.terminate();
+      throw err;
+    }
     ws.on("close", () => {
       if (this.hubSocket === ws) this.hubSocket = null;
       this.#scheduleReconnect();

@@ -25,7 +25,6 @@ function connect() {
     if (socket.readyState !== WebSocket.OPEN) return;
     setStatus("connected");
     socket.send(JSON.stringify({ type: "hello", role: "extension", version: chrome.runtime.getManifest().version, capabilities: capabilities.enabled }));
-    socket.send(JSON.stringify({ type: "capabilities", enabled: capabilities.enabled }));
     clearInterval(pingTimer);
     pingTimer = setInterval(() => socket.readyState === WebSocket.OPEN && socket.send('{"type":"ping"}'), PING_MS);
   };

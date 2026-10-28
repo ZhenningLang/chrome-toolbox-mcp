@@ -12,17 +12,21 @@ export const CAPABILITY_TOOLS = {
 };
 
 export class CapabilityState extends EventEmitter {
-  constructor(homeDir) {
+  constructor(homeDir, log = () => {}) {
     super();
     this.homeDir = homeDir;
     this.file = join(homeDir, "capabilities.json");
+    this.log = log;
     this.reload();
   }
   reload() {
-    let enabled;
-    try { enabled = JSON.parse(readFileSync(this.file, "utf8")).enabled; }
-    catch (err) { if (err.code !== "ENOENT") throw err; enabled = ["readingList"]; }
-    this.set(enabled, false);
+    try {
+      this.set(JSON.parse(readFileSync(this.file, "utf8")).enabled, false);
+    } catch (err) {
+      if (err.code !== "ENOENT") this.log(`capabilities cache could not be loaded; using readingList (${err.code ?? err.name})`);
+      // The plugin is authoritative; an invalid cache must not prevent startup.
+      this.set(["readingList"], false);
+    }
   }
   set(enabled, persist = true) {
     if (!Array.isArray(enabled) || enabled.some((id) => !Object.hasOwn(CAPABILITY_TOOLS, id))) throw new Error("invalid capability list");

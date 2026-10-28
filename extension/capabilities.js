@@ -1,8 +1,8 @@
 export const CAPABILITIES = [
-  { id: "readingList", name: "阅读清单", description: "读取、添加和整理阅读清单，删除前备份。", permissions: ["readingList"], prefix: "readingList." },
-  { id: "tabs", name: "标签页与标签组", description: "查看、打开、分组标签页，关闭前备份。", permissions: ["tabs", "tabGroups"], prefix: "tabs." },
-  { id: "bookmarks", name: "书签", description: "搜索、添加和移动书签，不提供删除。", permissions: ["bookmarks"], prefix: "bookmarks." },
-  { id: "history", name: "历史记录", description: "只读搜索浏览历史。", permissions: ["history"], prefix: "history." },
+  { id: "readingList", name: "阅读清单", description: "读取、添加和整理阅读清单，删除前备份。", permissions: ["readingList"], prefix: ["readingList."] },
+  { id: "tabs", name: "标签页与标签组", description: "查看、打开、分组标签页，关闭前备份。", permissions: ["tabs", "tabGroups"], prefix: ["tabs.", "tabGroups."] },
+  { id: "bookmarks", name: "书签", description: "搜索、添加和移动书签，不提供删除。", permissions: ["bookmarks"], prefix: ["bookmarks."] },
+  { id: "history", name: "历史记录", description: "只读搜索浏览历史。", permissions: ["history"], prefix: ["history."] },
 ];
 
 // Called directly from a popup click, before yielding the user gesture.

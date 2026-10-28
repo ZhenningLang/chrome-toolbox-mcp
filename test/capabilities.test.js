@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Bridge } from "../src/bridge.js";
@@ -56,11 +56,53 @@ test("QA3-6 capability persistence, dynamic lists, eager peer subscription, reco
   assert.deepEqual(await names(second.client), toolsByCapability.readingList);
   ws.send(JSON.stringify({ type: "capabilities", enabled: ["tabs"] }));
   await until(async () => (await names(second.client)).includes("tabs_list") && !(await names(second.client)).includes("reading_list_list"));
+  // A reload mutation must not survive merely because disk and peer cache agree.
+  assert.deepEqual(peer.capabilityState.enabled, ["tabs"]);
+  writeFileSync(file, JSON.stringify({ enabled: ["bookmarks", "history"], updatedAt: new Date().toISOString() }));
   await hub.close();
   await until(() => peer.mode === "hub");
   const saved = JSON.parse(readFileSync(file, "utf8"));
   const expected = saved.enabled.flatMap((capability) => toolsByCapability[capability]);
   assert.deepEqual(await names(second.client), expected);
+});
+
+test("B peer handshake failure keeps MCP startup available with readingList defaults", async (t) => {
+  const hubHome = mkdtempSync(join(tmpdir(), "toolbox-hub-token-"));
+  const hub = new Bridge({ port: 0, homeDir: hubHome, allowedExtensionIds: [EXT_ID] });
+  await hub.start();
+  t.after(() => hub.close());
+  const homeDir = mkdtempSync(join(tmpdir(), "toolbox-peer-token-"));
+  writeFileSync(join(homeDir, "capabilities.json"), JSON.stringify({ enabled: ["tabs"] }));
+  const logs = [];
+  const peer = new Bridge({ port: hub.wss.address().port, homeDir, allowedExtensionIds: [EXT_ID], log: (msg) => logs.push(msg) });
+  t.after(() => peer.close());
+  await peer.start();
+  assert.equal(peer.mode, "peer");
+  assert.deepEqual(peer.capabilityState.enabled, ["readingList"]);
+  const { client } = await mcp(peer, homeDir);
+  t.after(() => client.close());
+  assert.deepEqual((await client.listTools()).tools.map((tool) => tool.name), toolsByCapability.readingList);
+  assert.ok(logs.some((line) => line.includes("subscription") && line.includes("bad token")));
+});
+
+test("B invalid capability caches keep MCP startup available with readingList defaults", async (t) => {
+  for (const [name, data] of [["truncated", '{"enabled":'], ["empty", ""], ["unknown id", '{"enabled":["tabs","downloads"]}'], ["unreadable file", null]]) {
+    await t.test(name, async (sub) => {
+      const homeDir = mkdtempSync(join(tmpdir(), "toolbox-invalid-cache-"));
+      const file = join(homeDir, "capabilities.json");
+      if (data === null) mkdirSync(file);
+      else writeFileSync(file, data);
+      const logs = [];
+      const bridge = new Bridge({ port: 0, homeDir, allowedExtensionIds: [EXT_ID], log: (msg) => logs.push(msg) });
+      sub.after(() => bridge.close());
+      await bridge.start();
+      assert.deepEqual(bridge.capabilityState.enabled, ["readingList"]);
+      const { client } = await mcp(bridge, homeDir);
+      sub.after(() => client.close());
+      assert.deepEqual((await client.listTools()).tools.map((tool) => tool.name), toolsByCapability.readingList);
+      assert.ok(logs.some((line) => line.includes("capabilities cache") && line.includes("readingList")));
+    });
+  }
 });
 
 test("QA4 cold start reads saved capabilities; old extension hello resets to readingList", async (t) => {

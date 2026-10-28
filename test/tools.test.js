@@ -73,6 +73,72 @@ test("QA9 write failure closes no tabs", async (t) => {
   assert.equal(chrome.tabsStore.size, 1);
 });
 
+test("A:B1 pending navigation survives mixed-batch close and restore", async (t) => {
+  const { chrome, call } = await setup(t);
+  await call("tabs_open", { urls: ["https://material.example/committed", "https://material.example/new"] });
+  Object.assign(chrome.tabsStore.get(2), { url: "", pendingUrl: "https://material.example/new", title: "Loading" });
+  const closed = await call("tabs_close", { tabIds: [1, 2] });
+  const backup = JSON.parse(readFileSync(closed.backupPath));
+  assert.equal(backup.tabs[1].url, "https://material.example/new");
+  assert.equal(backup.tabs[1].pendingUrl, "https://material.example/new");
+  assert.equal(closed.closed, 2);
+  await call("tabs_open", { backupPath: closed.backupPath });
+  assert.deepEqual([...chrome.tabsStore.values()].map((tab) => tab.url), ["https://material.example/committed", "https://material.example/new"]);
+});
+
+test("A:B1 unresolvable tab aborts the whole close batch without removing tabs", async (t) => {
+  const { chrome, call } = await setup(t);
+  await call("tabs_open", { urls: ["https://material.example/keep", "https://material.example/loading"] });
+  for (const url of ["", "not a URL", undefined]) {
+    Object.assign(chrome.tabsStore.get(2), { url, pendingUrl: undefined });
+    await assert.rejects(call("tabs_close", { tabIds: [1, 2] }), /cannot close tabs.*restorable/s);
+    assert.equal(chrome.calls.some(([method]) => method === "tabs.remove"), false);
+    assert.equal(chrome.tabsStore.size, 2);
+  }
+});
+
+test("A:B1 pending URL wins over stale or missing committed URLs", async (t) => {
+  const { chrome, call } = await setup(t);
+  await call("tabs_open", { urls: ["https://material.example/old", "https://material.example/not-committed"] });
+  Object.assign(chrome.tabsStore.get(1), { pendingUrl: "https://material.example/new-1" });
+  Object.assign(chrome.tabsStore.get(2), { url: undefined, pendingUrl: "https://material.example/new-2" });
+  const closed = await call("tabs_close", { tabIds: [1, 2] });
+  const expected = ["https://material.example/new-1", "https://material.example/new-2"];
+  assert.deepEqual(JSON.parse(readFileSync(closed.backupPath)).tabs.map((tab) => tab.url), expected);
+  await call("tabs_open", { backupPath: closed.backupPath });
+  assert.deepEqual([...chrome.tabsStore.values()].map((tab) => tab.url), expected);
+});
+
+test("A window-targeted open, move and restore create groups in the target window", async (t) => {
+  const { chrome, call } = await setup(t);
+  await call("tabs_open", { urls: ["https://window.example/1", "https://window.example/2"], windowId: 42, group: { title: "Window 42" } });
+  assert.equal(chrome.calls.find(([method]) => method === "tabs.group")[1].createProperties?.windowId, 42);
+  assert.equal([...chrome.groupsStore.values()].at(-1).windowId, 42);
+  const moved = await call("tabs_move", { tabIds: [1], newGroup: { title: "Move" } });
+  assert.equal(chrome.calls.filter(([method]) => method === "tabs.group").at(-1)[1].createProperties?.windowId, 42);
+  await call("tabs_move", { tabIds: [2], groupId: moved.groupId });
+  assert.equal(chrome.calls.filter(([method]) => method === "tabs.group").at(-1)[1].createProperties, undefined);
+  const closed = await call("tabs_close", { tabIds: [1, 2] });
+  const restored = await call("tabs_open", { backupPath: closed.backupPath, windowId: 77 });
+  assert.deepEqual(restored.tabs.map((tab) => tab.windowId), [77, 77]);
+  assert.equal(chrome.calls.filter(([method]) => method === "tabs.group").at(-1)[1].createProperties?.windowId, 77);
+  assert.equal([...chrome.groupsStore.values()].at(-1).windowId, 77);
+});
+
+test("A existing group titles longer than the new-input limit survive close and restore", async (t) => {
+  const { chrome, call } = await setup(t);
+  await call("tabs_open", { urls: ["https://group.example/long-title"] });
+  const groupId = await chrome.tabs.group({ tabIds: [1] });
+  const title = "L".repeat(81);
+  await chrome.tabGroups.update(groupId, { title, color: "purple" });
+  const closed = await call("tabs_close", { tabIds: [1] });
+  assert.equal(JSON.parse(readFileSync(closed.backupPath)).tabs[0].group.title, title);
+  await call("tabs_open", { backupPath: closed.backupPath });
+  assert.equal(chrome.tabsStore.size, 1);
+  assert.equal([...chrome.groupsStore.values()].at(-1).title, title);
+  assert.equal([...chrome.groupsStore.values()].at(-1).color, "purple");
+});
+
 test("QA10 tabs move into existing/new group and ungroup; group metadata updates", async (t) => {
   const { chrome, call } = await setup(t);
   await call("tabs_open", { urls: ["https://example.com", "https://example.org"] });
@@ -149,6 +215,8 @@ test("QA9a parameter limits reject before invoking any browser API", async (t) =
     ["bookmarks_search", { query: "A", limit: 0 }],
     ["history_search", { maxResults: 1001 }],
     ["history_search", { startTime: "yesterday" }],
+    ["history_search", { startTime: "2026-10-01" }],
+    ["history_search", { startTime: "2026-10-01T00:00:00" }],
   ];
   for (const [name, args] of cases) await assert.rejects(call(name, args), undefined, `${name} ${JSON.stringify(args)}`);
   assert.deepEqual(chrome.calls, []);

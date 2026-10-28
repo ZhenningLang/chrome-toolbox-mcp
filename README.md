@@ -90,9 +90,13 @@ The six reading-list tool schemas and response shapes are unchanged. List suppor
 
 `tabs_close` accepts 1-500 tab IDs and saves titles, URLs and group metadata in `~/.chrome-toolbox-mcp/backups/tabs-*.json` before closing anything. A failed backup closes nothing. Reopen using `tabs_open` with `backupPath`; optional `urls` filters entries in that backup. Named groups are recreated, but a backup is not a full browser-session snapshot: form state, navigation stacks and original tab IDs are not restored.
 
+Pending navigation targets are preserved. If any selected tab has no restorable URL, the whole close request is rejected and all selected tabs remain open. Existing group titles are restored without applying the 80-character limit for new group inputs. Opening/restoring a batch is not transactional if Chrome rejects an individual URL: already-created tabs remain.
+
 `bookmarks_search` includes parent folder paths and defaults to 50 results (maximum 500). Add/move accepts exactly one of `parentId` or `parentPath`; missing path folders are created progressively. Omitting `url` when adding creates a folder. There is no bookmark deletion tool.
 
-`history_search` accepts ISO 8601 or epoch-millisecond start/end times. Start defaults to 24 hours ago, text to all entries, and maxResults to 100 (maximum 1000). History tools are read-only.
+The first `parentPath` segment must name an existing root folder in Chrome's UI language (for example, `Bookmarks bar` in English). Alternatively, use a `parentId` returned by search.
+
+`history_search` accepts ISO 8601 date-times with `Z` or a UTC offset (such as `+08:00`), or epoch-millisecond start/end times. Plain dates and local date-times without a timezone are rejected. Start defaults to 24 hours ago, text to all entries, and maxResults to 100 (maximum 1000). History tools are read-only.
 
 ## Safety
 

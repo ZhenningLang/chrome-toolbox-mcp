@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createCapabilityController, changeCapability } from "../extension/capabilities.js";
 import { createDispatcher } from "../extension/dispatch.js";
+import { until } from "./helpers.js";
 
 function fakeChrome(saved) {
   const calls = [];
@@ -65,7 +66,12 @@ test("QA7 startup reconciles missing permissions and intercepts before any capab
   assert.deepEqual(chrome.calls, []);
   chrome.accepted = true;
   await changeCapability(chrome, "tabs", true);
+  const previousPushes = pushed.length;
   await chrome.permissions.remove({ permissions: ["tabs"] });
+  await until(() => pushed.length > previousPushes);
+  assert.deepEqual(pushed.at(-1), ["readingList"]);
+  assert.deepEqual(state.enabled, ["readingList"]);
+  assert.deepEqual((await chrome.storage.local.get("enabled")).enabled, ["readingList"]);
   await assert.rejects(dispatch("tabs.list"), /is turned off/);
   assert.equal(chrome.calls.some(([m]) => m === "tabs.query"), false);
 });

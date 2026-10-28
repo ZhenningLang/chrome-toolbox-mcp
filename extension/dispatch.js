@@ -1,5 +1,7 @@
+import { CAPABILITIES } from "./capabilities.js";
+
 export function createDispatcher(chrome, state) {
-  const fields = (tab) => Object.fromEntries(["id", "windowId", "index", "title", "url", "groupId", "pinned", "active", "lastAccessed"].map((key) => [key, tab[key]]));
+  const fields = (tab) => Object.fromEntries(["id", "windowId", "index", "title", "url", "pendingUrl", "groupId", "pinned", "active", "lastAccessed"].map((key) => [key, tab[key]]));
   async function groupsList(filter, knownTabs) {
     const [groups, tabs] = await Promise.all([chrome.tabGroups.query(filter), knownTabs ?? chrome.tabs.query(filter)]);
     const counts = new Map();
@@ -7,7 +9,9 @@ export function createDispatcher(chrome, state) {
     return groups.map((g) => ({ ...g, tabCount: counts.get(g.id) ?? 0 }));
   }
   async function groupTabs(tabIds, options, groupId) {
-    const id = await chrome.tabs.group({ tabIds, ...(groupId !== undefined ? { groupId } : {}) });
+    const target = groupId !== undefined ? { groupId }
+      : { createProperties: { windowId: (await chrome.tabs.get(tabIds[0])).windowId } };
+    const id = await chrome.tabs.group({ tabIds, ...target });
     if (options && Object.keys(options).length) await chrome.tabGroups.update(id, options);
     return id;
   }
@@ -79,7 +83,7 @@ export function createDispatcher(chrome, state) {
     "tabs.snapshot": async ({ tabIds }) => Promise.all(tabIds.map(async (id) => {
       const tab = await chrome.tabs.get(id);
       const group = tab.groupId >= 0 ? await chrome.tabGroups.get(tab.groupId) : null;
-      return { ...fields(tab), group };
+      return { ...fields(tab), url: tab.pendingUrl || tab.url, group };
     })),
     "tabs.close": async ({ tabIds }) => { await chrome.tabs.remove(tabIds); return { closed: tabIds.length }; },
     "bookmarks.search": async ({ query, limit = 50 }) => {
@@ -98,7 +102,7 @@ export function createDispatcher(chrome, state) {
   };
   return async (method, params = {}) => {
     if (["query", "add", "update", "remove"].includes(method)) method = `readingList.${method}`;
-    const capability = method.split(".")[0] === "tabGroups" ? "tabs" : method.split(".")[0];
+    const capability = CAPABILITIES.find((cap) => cap.prefix.some((prefix) => method.startsWith(prefix)))?.id ?? method.split(".")[0];
     if (!await state.allows(capability)) throw new Error(`capability "${capability}" is turned off in the Chrome Toolbox popup`);
     const handler = handlers[method];
     if (!handler) throw new Error(`unknown method ${method}`);
