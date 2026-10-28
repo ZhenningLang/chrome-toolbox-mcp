@@ -10,7 +10,9 @@ import { extension, EXT_ID } from "./helpers.js";
 
 test("QA13 config migration preserves token and backups; new env takes priority", () => {
   const userHome = mkdtempSync(join(tmpdir(), "toolbox-migration-"));
-  const oldDir = join(userHome, ".chrome-reading-list-mcp");
+  const frozenTools = JSON.parse(readFileSync(new URL("./fixtures/reading-tools.json", import.meta.url)));
+  const legacyDescription = frozenTools.find((tool) => tool.name === "reading_list_export").inputSchema.properties.path.description;
+  const oldDir = join(userHome, legacyDescription.split("Defaults to ~/")[1].split("/")[0]);
   mkdirSync(join(oldDir, "backups"), { recursive: true });
   writeFileSync(join(oldDir, "token"), "existing-token");
   writeFileSync(join(oldDir, "backups", "saved.json"), "preserved");

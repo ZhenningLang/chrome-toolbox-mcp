@@ -42,9 +42,8 @@ test("QA8-9 tabs open 20 grouped tabs, backup before close, restore and URL-filt
     const file = join(homeDir, "backups", readdirSync(join(homeDir, "backups")).find((p) => p.startsWith("tabs-")));
     const backup = JSON.parse(readFileSync(file));
     assert.equal(backup.tabs.length, 20);
-    assert.equal(backup.tabs[0].group.title, "测试");
-    assert.equal(backup.tabs[0].group.color, "blue");
-    assert.equal(backup.tabs[0].title, urls[0]);
+    assert.deepEqual(backup.tabs.map((tab) => ({ url: tab.url, title: tab.title, groupTitle: tab.group.title, groupColor: tab.group.color })),
+      urls.map((url) => ({ url, title: url, groupTitle: "测试", groupColor: "blue" })));
     if (process.platform !== "win32") assert.equal(statSync(file).mode & 0o777, 0o600);
   };
   const closed = await call("tabs_close", { tabIds: ids });
@@ -52,6 +51,7 @@ test("QA8-9 tabs open 20 grouped tabs, backup before close, restore and URL-filt
   assert.equal(chrome.tabsStore.size, 0);
   await call("tabs_open", { backupPath: closed.backupPath });
   assert.equal(chrome.tabsStore.size, 20);
+  assert.deepEqual([...chrome.tabsStore.values()].map((tab) => tab.url), urls);
   assert.equal([...chrome.groupsStore.values()].at(-1).title, "测试");
   const filtered = await call("tabs_open", { backupPath: closed.backupPath, urls: [urls[0]] });
   assert.equal(filtered.tabs.length, 1);
@@ -78,6 +78,7 @@ test("QA10 tabs move into existing/new group and ungroup; group metadata updates
   await call("tabs_open", { urls: ["https://example.com", "https://example.org"] });
   await call("tabs_move", { tabIds: [1], newGroup: { title: "New", color: "green" } });
   const groupId = chrome.tabsStore.get(1).groupId;
+  assert.equal(chrome.groupsStore.get(groupId).title, "New");
   await call("tabs_move", { tabIds: [2], groupId });
   assert.equal(chrome.tabsStore.get(2).groupId, groupId);
   assert.equal((await call("tab_groups_list"))[0].tabCount, 2);

@@ -7,6 +7,14 @@ import { Bridge } from "../src/bridge.js";
 import { ToolListChangedNotificationSchema } from "@modelcontextprotocol/sdk/types.js";
 import { EXT_ID, extension, mcp, until } from "./helpers.js";
 
+// Independent expectations from the approved tool contract, not the production mapping.
+const toolsByCapability = {
+  readingList: ["reading_list_list", "reading_list_add", "reading_list_update", "reading_list_remove", "reading_list_restore", "reading_list_export"],
+  tabs: ["tabs_list", "tabs_open", "tabs_move", "tab_groups_list", "tab_groups_update", "tabs_close"],
+  bookmarks: ["bookmarks_search", "bookmarks_add", "bookmarks_move"],
+  history: ["history_search"],
+};
+
 test("QA3-6 capability persistence, dynamic lists, eager peer subscription, reconnect and takeover", async (t) => {
   const homeDir = mkdtempSync(join(tmpdir(), "toolbox-caps-"));
   const hub = new Bridge({ port: 0, allowedExtensionIds: [EXT_ID], homeDir });
@@ -16,7 +24,7 @@ test("QA3-6 capability persistence, dynamic lists, eager peer subscription, reco
   const first = await mcp(hub, homeDir);
   t.after(() => first.client.close());
   const names = async (client) => (await client.listTools()).tools.map((x) => x.name);
-  assert.equal((await names(first.client)).length, 6);
+  assert.deepEqual(await names(first.client), toolsByCapability.readingList);
   const ws = await extension(port);
   t.after(() => ws.terminate());
   const peer = new Bridge({ port, allowedExtensionIds: [EXT_ID], homeDir });
@@ -30,7 +38,7 @@ test("QA3-6 capability persistence, dynamic lists, eager peer subscription, reco
   second.client.setNotificationHandler(ToolListChangedNotificationSchema, () => { peerChanges++; });
   ws.send(JSON.stringify({ type: "capabilities", enabled: ["readingList", "tabs"] }));
   await until(() => changes > 0 && peerChanges > 0);
-  assert.equal((await names(first.client)).filter((n) => n.startsWith("tabs_") || n.startsWith("tab_groups_")).length, 6);
+  assert.deepEqual(await names(first.client), [...toolsByCapability.readingList, ...toolsByCapability.tabs]);
   assert.deepEqual(await names(second.client), await names(first.client));
   const file = join(homeDir, "capabilities.json");
   assert.deepEqual(JSON.parse(readFileSync(file)).enabled, ["readingList", "tabs"]);
@@ -43,12 +51,16 @@ test("QA3-6 capability persistence, dynamic lists, eager peer subscription, reco
   await until(() => peer.hubSocket?.readyState === 1);
   assert.deepEqual(await names(second.client), await names(first.client));
   ws.send(JSON.stringify({ type: "capabilities", enabled: ["readingList"] }));
-  await until(async () => (await names(second.client)).length === 6);
+  await until(async () => JSON.stringify(await names(second.client)) === JSON.stringify(toolsByCapability.readingList));
+  assert.deepEqual(await names(first.client), toolsByCapability.readingList);
+  assert.deepEqual(await names(second.client), toolsByCapability.readingList);
   ws.send(JSON.stringify({ type: "capabilities", enabled: ["tabs"] }));
   await until(async () => (await names(second.client)).includes("tabs_list") && !(await names(second.client)).includes("reading_list_list"));
   await hub.close();
   await until(() => peer.mode === "hub");
-  assert.deepEqual(await names(second.client), ["tabs_list", "tabs_open", "tabs_move", "tab_groups_list", "tab_groups_update", "tabs_close"]);
+  const saved = JSON.parse(readFileSync(file, "utf8"));
+  const expected = saved.enabled.flatMap((capability) => toolsByCapability[capability]);
+  assert.deepEqual(await names(second.client), expected);
 });
 
 test("QA4 cold start reads saved capabilities; old extension hello resets to readingList", async (t) => {
@@ -63,6 +75,6 @@ test("QA4 cold start reads saved capabilities; old extension hello resets to rea
   const ws = await extension(bridge.wss.address().port);
   t.after(() => ws.terminate());
   await until(async () => (await client.listTools()).tools.some((t) => t.name === "reading_list_list"));
-  assert.equal((await client.listTools()).tools.length, 6);
+  assert.deepEqual((await client.listTools()).tools.map((tool) => tool.name), toolsByCapability.readingList);
   assert.deepEqual(JSON.parse(readFileSync(join(homeDir, "capabilities.json"))).enabled, ["readingList"]);
 });
