@@ -1,6 +1,6 @@
-// Connects to the local MCP server and runs reading-list calls it sends.
-// The whole extension is this file: it only touches chrome.readingList and
-// only talks to 127.0.0.1.
+// Local-only bridge. Capability state in storage controls every browser call.
+import { createCapabilityController } from "./capabilities.js";
+import { createDispatcher } from "./dispatch.js";
 
 const PORT = 17893;
 const URL_ = `ws://127.0.0.1:${PORT}`;
@@ -11,25 +11,21 @@ let ws = null;
 let pingTimer = null;
 let retryTimer = null;
 
-const handlers = {
-  query: () => chrome.readingList.query({}),
-  add: ({ url, title, hasBeenRead }) => chrome.readingList.addEntry({ url, title, hasBeenRead: Boolean(hasBeenRead) }),
-  update: ({ url, title, hasBeenRead }) => {
-    const info = { url };
-    if (title !== undefined) info.title = title;
-    if (hasBeenRead !== undefined) info.hasBeenRead = hasBeenRead;
-    return chrome.readingList.updateEntry(info);
-  },
-  remove: ({ url }) => chrome.readingList.removeEntry({ url }),
-};
+const capabilities = createCapabilityController(chrome, (enabled) => {
+  if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: "capabilities", enabled }));
+});
+const dispatch = createDispatcher(chrome, capabilities);
 
 function connect() {
   if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
   const socket = new WebSocket(URL_);
   ws = socket;
-  socket.onopen = () => {
+  socket.onopen = async () => {
+    await capabilities.ready;
+    if (socket.readyState !== WebSocket.OPEN) return;
     setStatus("connected");
-    socket.send(JSON.stringify({ type: "hello", role: "extension", version: chrome.runtime.getManifest().version }));
+    socket.send(JSON.stringify({ type: "hello", role: "extension", version: chrome.runtime.getManifest().version, capabilities: capabilities.enabled }));
+    socket.send(JSON.stringify({ type: "capabilities", enabled: capabilities.enabled }));
     clearInterval(pingTimer);
     pingTimer = setInterval(() => socket.readyState === WebSocket.OPEN && socket.send('{"type":"ping"}'), PING_MS);
   };
@@ -41,13 +37,11 @@ function connect() {
       return;
     }
     if (!msg.id || !msg.method) return;
-    const handler = handlers[msg.method];
     try {
-      if (!handler) throw new Error(`unknown method ${msg.method}`);
-      const result = await handler(msg.params || {});
+      const result = await dispatch(msg.method, msg.params || {});
       socket.send(JSON.stringify({ id: msg.id, result: result ?? null }));
     } catch (err) {
-      socket.send(JSON.stringify({ id: msg.id, error: String(err?.message || err) }));
+      if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ id: msg.id, error: String(err?.message || err) }));
     }
   };
   socket.onclose = () => {
@@ -61,9 +55,10 @@ function connect() {
 }
 
 function setStatus(state) {
-  chrome.action.setBadgeText({ text: state === "connected" ? "" : "…" });
+  chrome.action.setBadgeText({ text: state === "connected" ? "" : "..." });
+  chrome.storage.local.set({ connectionStatus: state }).catch((err) => console.error("Chrome Toolbox status update failed", err));
   chrome.action.setTitle({
-    title: state === "connected" ? "Reading List MCP: connected" : "Reading List MCP: waiting for your AI client",
+    title: state === "connected" ? "Chrome Toolbox: connected" : "Chrome Toolbox: waiting for your AI client",
   });
 }
 
@@ -73,4 +68,12 @@ chrome.alarms.create("reconnect", { periodInMinutes: 0.5 });
 chrome.alarms.onAlarm.addListener((alarm) => alarm.name === "reconnect" && connect());
 chrome.runtime.onStartup.addListener(connect);
 chrome.runtime.onInstalled.addListener(connect);
-connect();
+chrome.runtime.onMessage.addListener((msg, sender, respond) => {
+  if (sender.id !== chrome.runtime.id || msg.type !== "setCapability") return;
+  capabilities.setEnabled(msg.id, msg.checked).then(
+    () => respond({ enabled: capabilities.enabled }),
+    (err) => respond({ error: err.message }),
+  );
+  return true;
+});
+capabilities.ready.then(connect).catch((err) => console.error("Chrome Toolbox startup failed", err));

@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "points": [
+    {"anchor": "U-DEC-1", "kind": "decide", "prompt": "原仓库改名，还是新建仓库，你定"},
+    {"anchor": "U-DEC-2", "kind": "decide", "prompt": "新插件默认开哪些能力，你定"},
+    {"anchor": "U-DEC-3", "kind": "decide", "prompt": "助手能不能替你关标签页，你定"},
+    {"anchor": "页面示意", "kind": "unclear", "prompt": "弹窗这样排，你一眼看得懂吗"},
+    {"anchor": "U-GATE-2", "kind": "assumption", "prompt": "改你本机助手配置这一步，可以由我来做吗"},
+    {"anchor": "U-SPK-1", "kind": "assumption", "prompt": "授权试不通时改成装插件时一次性要，能接受吗"}
+  ]
+}

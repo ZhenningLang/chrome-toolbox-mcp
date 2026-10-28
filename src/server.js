@@ -1,5 +1,9 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { CAPABILITY_TOOLS } from "./capabilityState.js";
+import { registerTabs } from "./tabs.js";
+import { registerBookmarks } from "./bookmarks.js";
+import { registerHistory } from "./history.js";
 
 const json = (value) => ({ content: [{ type: "text", text: JSON.stringify(value, null, 2) }] });
 
@@ -12,9 +16,15 @@ async function run(fn) {
 }
 
 export function createServer(readingList, { version }) {
-  const server = new McpServer({ name: "chrome-reading-list", version });
+  const server = new McpServer({ name: "chrome-toolbox-mcp", version });
+  const registered = new Map();
+  const register = (name, config, handler) => {
+    const tool = server.registerTool(name, config, handler);
+    registered.set(name, tool);
+    return tool;
+  };
 
-  server.registerTool(
+  register(
     "reading_list_list",
     {
       title: "List reading list entries",
@@ -34,7 +44,7 @@ export function createServer(readingList, { version }) {
     (args) => run(() => readingList.list(args)),
   );
 
-  server.registerTool(
+  register(
     "reading_list_add",
     {
       title: "Add to reading list",
@@ -48,7 +58,7 @@ export function createServer(readingList, { version }) {
     ({ entries }) => run(() => readingList.add(entries)),
   );
 
-  server.registerTool(
+  register(
     "reading_list_update",
     {
       title: "Mark read / rename entries",
@@ -65,7 +75,7 @@ export function createServer(readingList, { version }) {
     ({ entries }) => run(() => readingList.update(entries)),
   );
 
-  server.registerTool(
+  register(
     "reading_list_remove",
     {
       title: "Remove from reading list",
@@ -78,7 +88,7 @@ export function createServer(readingList, { version }) {
     ({ urls }) => run(() => readingList.remove(urls)),
   );
 
-  server.registerTool(
+  register(
     "reading_list_restore",
     {
       title: "Restore from backup",
@@ -93,7 +103,7 @@ export function createServer(readingList, { version }) {
     ({ backupPath, urls }) => run(() => readingList.restore(backupPath, urls)),
   );
 
-  server.registerTool(
+  register(
     "reading_list_export",
     {
       title: "Export reading list",
@@ -107,5 +117,22 @@ export function createServer(readingList, { version }) {
     (args) => run(() => readingList.export(args)),
   );
 
+  const bridge = readingList.bridge;
+  if (bridge) {
+    const operation = (name, config, fn) => register(name, config, (args) => run(() => fn(args)));
+    registerTabs(operation, bridge);
+    registerBookmarks(operation, bridge);
+    registerHistory(operation, bridge);
+    const sync = (enabled) => {
+      for (const [capability, names] of Object.entries(CAPABILITY_TOOLS)) for (const name of names) {
+        const tool = registered.get(name);
+        if (tool && tool.enabled !== enabled.includes(capability)) tool[enabled.includes(capability) ? "enable" : "disable"]();
+      }
+    };
+    sync(bridge.capabilityState.enabled);
+    bridge.capabilityState.on("change", sync);
+    const onclose = server.server.onclose;
+    server.server.onclose = () => { bridge.capabilityState.off("change", sync); onclose?.(); };
+  }
   return server;
 }

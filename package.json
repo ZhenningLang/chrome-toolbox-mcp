@@ -1,18 +1,18 @@
 {
-  "name": "chrome-reading-list-mcp",
+  "name": "chrome-toolbox-mcp",
   "version": "0.1.0",
-  "description": "MCP server that lets AI assistants (Claude, Cursor, Codex...) read, add, mark and clean up your Chrome reading list.",
+  "description": "Local MCP server for Chrome reading lists, tabs, groups, bookmarks and history, controlled by extension capability switches.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ZhenningLang/chrome-reading-list-mcp.git"
+    "url": "git+https://github.com/ZhenningLang/chrome-toolbox-mcp.git"
   },
-  "homepage": "https://github.com/ZhenningLang/chrome-reading-list-mcp#readme",
+  "homepage": "https://github.com/ZhenningLang/chrome-toolbox-mcp#readme",
   "bugs": {
-    "url": "https://github.com/ZhenningLang/chrome-reading-list-mcp/issues"
+    "url": "https://github.com/ZhenningLang/chrome-toolbox-mcp/issues"
   },
   "type": "module",
   "bin": {
-    "chrome-reading-list-mcp": "src/cli.js"
+    "chrome-toolbox-mcp": "src/cli.js"
   },
   "files": [
     "src",

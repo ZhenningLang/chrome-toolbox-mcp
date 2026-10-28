@@ -7,7 +7,7 @@ import { ReadingList } from "./readingList.js";
 import { createServer } from "./server.js";
 
 const { version } = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
-const log = (msg) => process.stderr.write(`[chrome-reading-list-mcp] ${msg}\n`);
+const log = (msg) => process.stderr.write(`[chrome-toolbox-mcp] ${msg}\n`);
 
 async function main(argv) {
   const cmd = argv[0];
@@ -33,8 +33,15 @@ async function main(argv) {
 }
 
 async function doctor(bridge, readingList, config) {
+  console.log(`chrome-toolbox-mcp ${version}`);
   console.log(`config dir : ${config.homeDir}`);
   console.log(`port       : ${config.port} (${bridge.mode})`);
+  console.log(`capabilities : ${bridge.capabilityState.enabled.join(", ") || "(none)"}`);
+  if (!bridge.capabilityState.enabled.includes("readingList")) {
+    console.log("Reading-list connectivity check disabled in the Chrome Toolbox popup.");
+    await bridge.close();
+    return;
+  }
   console.log("waiting for the Chrome extension to connect...");
   try {
     const { total, unread } = await readingList.list({ limit: 1 });
@@ -48,16 +55,18 @@ async function doctor(bridge, readingList, config) {
   }
 }
 
-const HELP = `chrome-reading-list-mcp ${version}
+const HELP = `chrome-toolbox-mcp ${version}
 
 Usage:
-  chrome-reading-list-mcp          run the MCP server (stdio); your AI client starts this
-  chrome-reading-list-mcp doctor   check that the Chrome extension is connected
+  chrome-toolbox-mcp          run the MCP server (stdio); your AI client starts this
+  chrome-toolbox-mcp doctor   show capabilities and check the Chrome extension
 
 Environment:
-  READING_LIST_MCP_PORT           local port shared with the extension (default 17893)
-  READING_LIST_MCP_HOME           where backups and exports go (default ~/.chrome-reading-list-mcp)
-  READING_LIST_MCP_EXTENSION_IDS  extra extension IDs allowed to connect (comma separated)
+  CHROME_TOOLBOX_MCP_PORT           local port shared with the extension (default 17893)
+  CHROME_TOOLBOX_MCP_HOME           backups, exports and capability state (default ~/.chrome-toolbox-mcp)
+  CHROME_TOOLBOX_MCP_EXTENSION_IDS  extra extension IDs allowed to connect (comma separated)
+
+Legacy READING_LIST_MCP_* variables remain supported; new variables take priority.
 `;
 
 main(process.argv.slice(2)).catch((err) => {

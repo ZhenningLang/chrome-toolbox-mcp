@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>chrome-toolbox-mcp · G-SPEC 机器版 spec</title>
+<style>
+:root { color-scheme: light; --bg: #f8fafc; --panel: #ffffff; --text: #111827; --muted: #64748b; --border: #dbe3ef; --accent: #1f4b99; }
+body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.55; }
+main { max-width: 960px; margin: 0 auto; padding: 32px 20px 48px; }
+header { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 18px; }
+section { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 22px; }
+h1, h2, h3, h4, h5, h6 { line-height: 1.2; margin: 1.4em 0 0.5em; }
+header h1 { margin-top: 0; }
+p { margin: 0.75em 0; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+ul { padding-left: 1.4rem; }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; background: #0f172a; color: #e5e7eb; padding: 14px; border-radius: 10px; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+td code, th code { overflow-wrap: anywhere; }
+th { background: #eef4ff; }
+.meta { color: var(--muted); font-size: 0.92rem; }
+.diagram-figure { margin: 1.2rem 0; padding: 12px; background: #ffffff; border: 1px solid var(--border); border-radius: 10px; overflow-x: auto; text-align: center; }
+.diagram-figure svg { height: auto; } /* 不设 max-width：宽图保持自然尺寸，figure 的 overflow-x 负责滚动 */
+table.state-transitions { margin-top: -0.4rem; font-size: 0.92rem; }
+table.state-transitions caption { caption-side: top; text-align: left; color: var(--muted); font-size: 0.82rem; padding: 0 0 6px; }
+table.state-transitions td.st-num { width: 2.2em; text-align: center; font-size: 1.1rem; color: var(--accent); }
+.image-figure { margin: 1.2rem 0; padding: 12px; background: #ffffff; border: 1px solid var(--border); border-radius: 10px; text-align: center; }
+.image-figure img { max-width: 100%; height: auto; border-radius: 6px; }
+.image-figure figcaption { color: var(--muted); font-size: 0.85rem; margin-top: 8px; }
+.badge { display: inline-block; background: #e0ecff; color: var(--accent); border-radius: 999px; padding: 2px 10px; font-size: 0.82rem; margin-right: 8px; }
+blockquote.alert { margin: 1rem 0; padding: 10px 14px; border-left: 4px solid var(--accent); background: #f2f6fd; border-radius: 0 8px 8px 0; }
+blockquote.alert p { margin: 0.3em 0; }
+blockquote.alert .alert-label { margin: 0 0 4px; font-weight: 600; font-size: 0.86rem; color: var(--accent); }
+blockquote.alert-tip { border-left-color: #047857; background: #eefaf4; }
+blockquote.alert-tip .alert-label { color: #047857; }
+blockquote.alert-warning { border-left-color: #b45309; background: #fdf6ec; }
+blockquote.alert-warning .alert-label { color: #b45309; }
+blockquote.alert-important { border-left-color: #7c3aed; background: #f6f2fd; }
+blockquote.alert-important .alert-label { color: #7c3aed; }
+blockquote.alert-caution { border-left-color: #b91c1c; background: #fdf2f2; }
+blockquote.alert-caution .alert-label { color: #b91c1c; }
+sup.regid { font-size: 0.66em; color: var(--muted); margin-left: 2px; white-space: nowrap; font-family: ui-monospace, monospace; }
+pre.wireframe { white-space: pre; overflow-x: auto; background: #fffdf5; color: #1f2937; border: 1px dashed #c8b98a; border-radius: 10px; padding: 14px 16px; line-height: 1.35; position: relative; }
+pre.wireframe::before { content: "页面示意（线框）"; display: block; color: #8a7a4a; font-size: 0.78rem; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin-bottom: 8px; }
+.layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 0 8px; max-width: 1220px; margin: 0 auto; }
+.layout main { margin: 0; min-width: 0; }
+.sidebar { position: sticky; top: 0; align-self: start; max-height: 100vh; overflow-y: auto; box-sizing: border-box; padding: 32px 0 32px 20px; font-size: 0.9rem; }
+.back-link { display: inline-block; background: var(--panel); border: 1px solid var(--border); border-radius: 999px; padding: 6px 14px; margin-bottom: 10px; font-weight: 600; }
+.toc-title { color: var(--muted); font-size: 0.8rem; margin: 8px 0 4px; }
+ul.toc { list-style: none; padding-left: 0; margin: 0; }
+ul.toc li { margin: 2px 0; }
+ul.toc a { display: block; padding: 4px 8px; border-radius: 6px; color: var(--text); overflow-wrap: anywhere; }
+ul.toc a:hover { background: #e8eefc; color: var(--accent); text-decoration: none; }
+h2[id], h3[id] { scroll-margin-top: 16px; }
+@media (max-width: 1100px) { .layout { display: block; } .sidebar { position: static; max-height: none; padding: 20px 20px 0; } }
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="sidebar"><a class="back-link" href="index.html">← 返回导航</a><div class="toc-title">本页目录</div><ul class="toc"><li><a href="#术语表">术语表</a></li><li><a href="#TL;DR">TL;DR</a></li><li><a href="#现状诊断">现状诊断</a></li><li><a href="#已锁定">已锁定</a></li><li><a href="#待决策">待决策</a></li><li><a href="#边界">边界</a></li><li><a href="#能力与工具">能力与工具</a></li><li><a href="#既有契约">既有契约</a></li><li><a href="#新增依赖">新增依赖</a></li><li><a href="#不可逆动作">不可逆动作</a></li><li><a href="#翻车假设">翻车假设</a></li><li><a href="#场景化推演">场景化推演</a></li><li><a href="#方案">方案</a></li><li><a href="#实施步骤">实施步骤</a></li><li><a href="#验收承诺">验收承诺</a></li></ul></nav>
+<main>
+<header>
+<span class="badge">plan</span>
+<h1>chrome-toolbox-mcp · G-SPEC 机器版 spec</h1>
+<div class="meta">Source: docs/specs/chrome-toolbox-mcp/overview.md</div>
+<div class="meta">Generated: 2026-10-28T17:31:57+00:00</div>
+</header>
+<section>
+<p>Audience:   P3 实现 agent Scope:      把阅读清单 MCP 扩成通用的 Chrome MCP（chrome-toolbox-mcp）：一个插件 + 一个本地服务，按能力勾选，勾了才暴露 / Non-scope: 页面内容读取、点击、截图等网页自动化；Chrome 应用商店上架；npm 发布 State:      approved Genre:      G-SPEC Code-Root:  /Users/zhenninglang/Projects/chrome-reading-list-mcp Prefixes:   U-DEC, U-BEH, U-GATE, U-SPK, U-ACC, U-NG, U-DEP, U-CTR, U-DIAG</p>
+<h1>chrome-toolbox-mcp · G-SPEC 机器版 spec</h1>
+<p>Planned at: 84d39f4 · 2026-10-29</p>
+<h2 id="术语表">术语表</h2>
+<ul><li>U-DEC: 待决策</li><li>U-BEH: 有意行为变化</li><li>U-GATE: 不可逆动作（单向门）</li><li>U-SPK: 翻车假设与 spike</li><li>U-ACC: 验收承诺</li><li>U-NG: non-goals</li><li>U-DEP: 新增依赖</li><li>U-CTR: 既有契约与回归红线</li><li>U-DIAG: 根因与现状诊断</li><li>能力（capability）：插件弹窗里一个可勾选的开关，对应一组 MCP 工具和一组 Chrome 权限。首批四个：<code>readingList</code>、<code>tabs</code>、<code>bookmarks</code>、<code>history</code>。</li><li>能力清单：插件当前勾选的能力集合，SSOT 在插件的 <code>chrome.storage.local</code>。</li></ul>
+<h2 id="TL;DR">TL;DR</h2>
+<p>在现有「服务 ⇄ WebSocket ⇄ 插件」骨架上加一层能力开关：插件弹窗勾选能力（勾选时按需申请 Chrome 权限），把能力清单推给服务；服务按清单启用或停用工具并发 <code>tools/list_changed</code>；插件对未勾选能力的调用一律拒绝。首批能力：阅读清单（迁移）、标签页与标签组、书签、历史记录。仓库与包改名 <code>chrome-toolbox-mcp</code>。</p>
+<h2 id="现状诊断">现状诊断</h2>
+<p><sup class="regid" title="登记单元 U-DIAG-1 · 指纹 3937">U-DIAG-1</sup> 现有服务只认阅读清单：插件 handler 表写死四个阅读清单方法（extension/background.js:14），服务启动即注册六个 <code>reading_list_*</code> 工具（src/server.js:17），没有任何开关；manifest 的 <code>permissions</code> 静态写死 <code>readingList</code>。要加能力只能改代码并重新加载插件，无法按需暴露。</p>
+<p><sup class="regid" title="登记单元 U-DIAG-2 · 指纹 0d06">U-DIAG-2</sup> 用户的 MCP 启动经 <code>~/.dotfiles/scripts/mcp_lazy.py --static-catalogue</code>。带这个参数时它把 <code>tools/list</code> 结果缓存 24 小时；不带时，若服务在 initialize 里声明 <code>tools.listChanged: true</code>，它不缓存、保持透明，并在收到 <code>notifications/tools/list_changed</code> 时清缓存（mcp_lazy.py 的 <code>save_cache</code> 与 <code>read_backend</code>）。MCP SDK 1.32.2 的 <code>McpServer</code> 默认声明 <code>listChanged: true</code>，<code>RegisteredTool.enable()/disable()</code> 会自动发 <code>tools/list_changed</code>。</p>
+<h2 id="已锁定">已锁定</h2>
+<ul><li>走 <code>/dev-complete</code>；新名 <code>chrome-toolbox-mcp</code>（npm 与 GitHub 均未占用，2026-10-29 查 registry.npmjs.org 与 api.github.com 均 404）。</li><li>不勾选的能力：服务端工具列表不出现 + 插件端拒绝执行，两道都做，以插件为准。</li><li>首批能力四个，范围见「能力与工具」节。</li><li>现有阅读清单工具名、参数、返回形状不变（<sup class="regid" title="登记单元 U-CTR-1 · 指纹 d8e3">U-CTR-1</sup>）。</li><li>插件 manifest 的 <code>key</code> 不变，扩展 ID 不变（<sup class="regid" title="登记单元 U-CTR-2 · 指纹 26d5">U-CTR-2</sup>）。</li></ul>
+<h2 id="待决策">待决策</h2>
+<p><sup class="regid" title="登记单元 U-DEC-1 · 指纹 abc9">U-DEC-1</sup> GitHub 仓库改名方式：在原仓库上改名（GitHub 自动把旧地址跳转到新地址，星标与历史保留），还是新建仓库、旧仓库归档。改名是外部可见动作，执行前过 <code>/guard-gitops</code>。 裁决（2026-10-29）：在原仓库上直接改名。</p>
+<p><sup class="regid" title="登记单元 U-DEC-2 · 指纹 5fe2">U-DEC-2</sup> 首次装上新版插件时默认勾选哪些能力：只勾阅读清单（保持现有行为，其余等用户自己开），还是四个全勾。 裁决（2026-10-29）：默认只开阅读清单。</p>
+<p><sup class="regid" title="登记单元 U-DEC-3 · 指纹 4b6e">U-DEC-3</sup> 标签页能力是否包含「关闭标签页」：包含（关闭前把标题和网址写进备份文件，可按备份重新打开），还是首批只读加分组、不提供关闭。 裁决（2026-10-29）：能关，关之前先存备份（tabs_close 进首批）。</p>
+<h2 id="边界">边界</h2>
+<p><sup class="regid" title="登记单元 U-NG-1 · 指纹 44a4">U-NG-1</sup> 不做页面内容读取、点击、填表、截图这类网页自动化；那是 Chrome DevTools MCP 与 hangwin/mcp-chrome 已经覆盖的领域。</p>
+<p><sup class="regid" title="登记单元 U-NG-2 · 指纹 4808">U-NG-2</sup> 不做历史记录删除、书签删除；历史只读搜索，书签只做搜索、添加、移动。</p>
+<p><sup class="regid" title="登记单元 U-NG-3 · 指纹 b605">U-NG-3</sup> 不上架 Chrome 应用商店、不发布 npm；继续用「加载已解压的扩展程序」和 <code>npx github:</code> 安装。</p>
+<p><sup class="regid" title="登记单元 U-NG-4 · 指纹 c9f6">U-NG-4</sup> 不做 Chrome「已保存标签组」的保存或删除：<code>chrome.tabGroups</code> 没有对应 API，收起分组用 <code>collapsed: true</code> 代替。</p>
+<h2 id="能力与工具">能力与工具</h2>
+<p>能力和工具一一列在这里，实现 agent 不得增减。工具参数用 zod 声明，风格照抄 src/server.js:17 起的现有写法。</p>
+<table><thead><tr><th>能力</th><th>Chrome 权限</th><th>工具</th></tr></thead><tbody><tr><td><code>readingList</code> 阅读清单</td><td><code>readingList</code>（安装时必需权限）</td><td><code>reading_list_list</code> <code>reading_list_add</code> <code>reading_list_update</code> <code>reading_list_remove</code> <code>reading_list_restore</code> <code>reading_list_export</code>（全部原样迁移）</td></tr><tr><td><code>tabs</code> 标签页与标签组</td><td><code>tabs</code> <code>tabGroups</code></td><td><code>tabs_list</code> <code>tabs_open</code> <code>tabs_move</code> <code>tab_groups_list</code> <code>tab_groups_update</code> <code>tabs_close</code></td></tr><tr><td><code>bookmarks</code> 书签</td><td><code>bookmarks</code></td><td><code>bookmarks_search</code> <code>bookmarks_add</code> <code>bookmarks_move</code></td></tr><tr><td><code>history</code> 历史记录</td><td><code>history</code></td><td><code>history_search</code></td></tr></tbody></table>
+<p><sup class="regid" title="登记单元 U-BEH-1 · 指纹 5e08">U-BEH-1</sup> 新增标签页工具的语义与参数边界（zod 写死）：<code>tabs_list</code>（可选 <code>windowId</code>）返回每个窗口的标签页（id、windowId、index、title、url、groupId、pinned、active、lastAccessed）和该窗口的分组；<code>tabs_open</code> 收 <code>urls</code>（1–100 个合法网址，超过直接报错、不截断、一个都不开）或 <code>backupPath</code>（加可选 <code>urls</code> 过滤，按备份重开、原分组名非空时重建同名分组），二者恰选其一；可选 <code>group: {title(≤80 字), color, collapsed}</code> 把新开的标签页放进一个新分组，可选 <code>active</code>（默认 false，后台打开）、<code>windowId</code>；<code>tabs_move</code> 收 <code>tabIds</code>（1–500）和三选一的目标：<code>groupId</code>（进已有分组）、<code>newGroup: {title, color, collapsed}</code>（进新分组）、<code>ungroup: true</code>（移出分组，<code>chrome.tabs.ungroup</code>）；<code>tab_groups_list</code>（可选 <code>windowId</code>）列出分组（id、title、color、collapsed、windowId、标签页数）；<code>tab_groups_update</code> 收 <code>groupId</code> 与至少一项 <code>title</code>/<code>color</code>/<code>collapsed</code>；<code>color</code> 只接受 Chrome 的九色枚举 grey/blue/red/yellow/green/pink/purple/cyan/orange。<code>tabs_close</code> 收 <code>tabIds</code>（1–500），先把每个标签页的标题、网址、所在分组名与颜色写进 <code>&lt;home&gt;/backups/tabs-&lt;时间&gt;.json</code>（0600，照抄 src/readingList.js:77 的备份写法）且写盘成功后才调 <code>chrome.tabs.remove</code>；写盘失败则一个都不关、返回错误；返回备份路径与实际关闭数。</p>
+<p><sup class="regid" title="登记单元 U-BEH-2 · 指纹 9b04">U-BEH-2</sup> 新增书签与历史工具的语义与参数边界（zod 写死）：<code>bookmarks_search</code> 收 <code>query</code>（非空）与 <code>limit</code>（默认 50，1–500），用 <code>chrome.bookmarks.search</code>，返回 id、title、url、parentId 和父文件夹路径（如 <code>书签栏/写作/导读</code>）；<code>bookmarks_add</code> 收 <code>title</code>、可选 <code>url</code>（不给就是建文件夹），目标文件夹用 <code>parentId</code> 或 <code>parentPath</code> 恰选其一，二者都给或都不给报错，<code>parentPath</code> 不存在时逐级建文件夹；<code>bookmarks_move</code> 收 <code>id</code> 与 <code>parentId</code>/<code>parentPath</code> 恰选其一，可选 <code>index</code>；<code>history_search</code> 收可选 <code>text</code>（默认空串=全部）、可选 <code>startTime</code>/<code>endTime</code>（ISO 8601 字符串或毫秒时间戳，统一换成毫秒；不给 startTime 时默认 24 小时前，与 <code>chrome.history.search</code> 默认一致）、<code>maxResults</code>（默认 100，1–1000），返回 url、title、lastVisitTime、visitCount。</p>
+<p><sup class="regid" title="登记单元 U-BEH-3 · 指纹 47eb">U-BEH-3</sup> 插件新增弹窗：点工具栏图标弹出能力列表，每项一个勾选框、一句说明、权限状态。<code>tabs</code>、<code>bookmarks</code>、<code>history</code> 三项勾选时在点击回调里调 <code>chrome.permissions.request</code> 申请该能力的权限，用户拒绝则勾选框弹回未勾选；取消勾选时调 <code>chrome.permissions.remove</code> 交还权限。<code>readingList</code> 的权限是安装时必需权限（见 U-SPK-1），它的勾选框只管是否暴露给助手，不申请也不交还权限。首次安装或从旧版升级（<code>chrome.storage.local</code> 里没有记录）时默认只勾 <code>readingList</code>。插件每次启动先做一次对账：有效清单 = 已存的勾选 ∩ 当前确实持有权限的能力（<code>chrome.permissions.contains</code>），对账后的结果写回存储并推送服务。弹窗顶部显示与本地服务的连接状态。页面示意见 approval.md「页面示意」。</p>
+<p><sup class="regid" title="登记单元 U-BEH-4 · 指纹 b2d6">U-BEH-4</sup> 能力清单的流转：插件在连上服务时（hello 消息里带 <code>capabilities</code>）和每次勾选或权限变化时发 <code>{type:&quot;capabilities&quot;, enabled:[...]}</code>；hub 进程收到后写入 <code>&lt;home&gt;/capabilities.json</code>（权限 0600）并转发给所有 peer；peer 与 hub 握手成功（welcome）后，hub 立即把当前清单推给它一次，之后每次变化再推；peer 断线重连同样重推；peer 升格为 hub 时先读盘。peer 进程启动即连接 hub 订阅清单（不再等到第一次工具调用才连），这样从没调用过浏览器工具的 peer 也能收到变化。每个服务进程据此对工具 <code>enable()</code> / <code>disable()</code>。服务启动时先读 <code>capabilities.json</code> 决定初始工具列表，文件不存在时视为 <code>[&quot;readingList&quot;]</code>。插件 hello 里没有 capabilities（旧版插件）时也视为 <code>[&quot;readingList&quot;]</code>。只接受来自插件连接的清单消息，peer 发来的一律忽略。</p>
+<p><sup class="regid" title="登记单元 U-BEH-5 · 指纹 fee9">U-BEH-5</sup> 插件端拦截与线上方法名：阅读清单沿用旧方法名 <code>query</code>/<code>add</code>/<code>update</code>/<code>remove</code>（新服务照旧发这四个名字，保证新服务配旧插件可用），新插件同时接受旧名与 <code>readingList.&lt;动作&gt;</code> 两种写法，二者都归 <code>readingList</code> 能力并经过拦截；新能力用 <code>&lt;能力&gt;.&lt;动作&gt;</code>（如 <code>tabs.open</code>）。插件收到调用时先查有效能力清单，未勾选或权限已缺失则返回错误 <code>capability &quot;&lt;能力&gt;&quot; is turned off in the Chrome Toolbox popup</code>，不碰任何 Chrome API。<code>chrome.permissions.onRemoved</code> 触发时同步取消勾选、写回存储并推送清单。</p>
+<p><sup class="regid" title="登记单元 U-BEH-6 · 指纹 6e7b">U-BEH-6</sup> 改名带来的可见变化：npm 包名、bin、插件名、日志前缀、MCP server name 改为 <code>chrome-toolbox-mcp</code>；配置目录默认 <code>~/.chrome-toolbox-mcp</code>，环境变量前缀 <code>CHROME_TOOLBOX_MCP_</code>。新目录不存在而旧目录 <code>~/.chrome-reading-list-mcp</code> 存在时，首次启动把旧目录整体改名为新目录（保留 token 与备份）；旧环境变量 <code>READING_LIST_MCP_*</code> 仍被读取，新变量优先。</p>
+<h2 id="既有契约">既有契约</h2>
+<p><sup class="regid" title="登记单元 U-CTR-1 · 指纹 d637">U-CTR-1</sup> 六个 <code>reading_list_*</code> 工具的名字、参数、返回形状、删除前写备份的行为不变（src/server.js:17 起；测试 test/bridge.test.js:85）。用户的会话记录与笔记里引用了这些名字。</p>
+<p><sup class="regid" title="登记单元 U-CTR-2 · 指纹 3967">U-CTR-2</sup> 扩展 ID <code>ccclijbaodgdphbciifmfgnihbadlloj</code> 不变（src/config.js:10），靠 manifest 里的 <code>key</code> 字段固定。改 manifest 时不得删改 <code>key</code>；否则服务拒绝插件连接（来源白名单校验在 src/bridge.js:117 的调用方）。</p>
+<p><sup class="regid" title="登记单元 U-CTR-3 · 指纹 d075">U-CTR-3</sup> 安全边界不变：服务只监听 127.0.0.1；插件连接按 Origin 白名单放行，网页无法伪造；第二个服务进程须出示 0600 token 才能经 hub 转发（src/bridge.js:134）。能力清单消息只接受来自插件连接，peer 发来的一律忽略。</p>
+<p><sup class="regid" title="登记单元 U-CTR-4 · 指纹 6e35">U-CTR-4</sup> 端口 17893 不变（src/config.js:6）。新旧版本双向混用时阅读清单照常可用：新服务配旧插件——旧插件 hello 不带清单，服务视为 <code>[&quot;readingList&quot;]</code>，并用旧方法名 <code>query/add/update/remove</code> 调用（U-BEH-5）；旧服务配新插件——旧服务发旧方法名，新插件按 <code>readingList</code> 能力受理并拦截，旧服务忽略它不认识的 <code>capabilities</code> 消息。两条路径都要有真实调用的自动化测试。</p>
+<h2 id="新增依赖">新增依赖</h2>
+<p><sup class="regid" title="登记单元 U-DEP-1 · 指纹 4f8c">U-DEP-1</sup> 无新增 npm 依赖、无新进程、无外部服务。新增的只有插件的弹窗页面（<code>extension/popup.html</code> + <code>popup.js</code>）和 Chrome 权限（<code>tabs</code> <code>tabGroups</code> <code>bookmarks</code> <code>history</code>，均尽量放 <code>optional_permissions</code>）。弹窗不用框架，原生 DOM。</p>
+<h2 id="不可逆动作">不可逆动作</h2>
+<p><sup class="regid" title="登记单元 U-GATE-1 · 指纹 8b96">U-GATE-1</sup> GitHub 仓库改名（或按 U-DEC-1 新建仓库）。旧地址的 <code>npx -y github:ZhenningLang/chrome-reading-list-mcp</code> 在改名后靠 GitHub 跳转继续可用 [未验证：npx 走 git 协议时是否跟随仓库改名跳转，见 U-SPK-3]。执行前过 <code>/guard-gitops</code>，由 owner 当场确认。</p>
+<p><sup class="regid" title="登记单元 U-GATE-2 · 指纹 c8fa">U-GATE-2</sup> 改用户本机 MCP 配置：<code>~/.claude.json</code> 里这个服务的启动参数去掉 <code>--static-catalogue</code>，并把 npx 地址换成新仓库名；kilo、opencode 的配置同理。改前备份原文件，改后跑 <code>claude mcp list</code> 确认连上。属于 harness 配置，改动走 <code>~/.dotfiles</code> 的 SSOT（若这些配置由 dotfiles 生成）。</p>
+<h2 id="翻车假设">翻车假设</h2>
+<p><sup class="regid" title="登记单元 U-SPK-1 · 指纹 f5cb">U-SPK-1</sup> 假设：<code>tabs</code>、<code>tabGroups</code>、<code>bookmarks</code>、<code>history</code> 都能写进 <code>optional_permissions</code>。处置：已验证（文档）——Chrome 官方 chrome.permissions 参考页（developer.chrome.com/docs/extensions/reference/api/permissions，2026-10-29 读取）「不能设为可选的权限」只有 debugger、declarativeNetRequest、devtools、geolocation、mdns、proxy、tts、ttsEngine、wallpaper，四个都不在内。<code>readingList</code> 不做可选：可选权限只能在用户点击时申请（<code>chrome.permissions.request</code> 要求用户手势），而 owner 裁决新插件默认就开阅读清单，所以它留在安装时必需权限里——旧版插件本来就持有它，升级不多弹窗（spec review 2026-10-29 B2）。本机 Chrome 156 上真正弹出授权框，留到人工验收时确认。</p>
+<p><sup class="regid" title="登记单元 U-SPK-2 · 指纹 3e32">U-SPK-2</sup> 假设：Claude Code 在会话中途收到 <code>tools/list_changed</code> 会刷新工具列表。If 不成立，勾选后要新开会话才看到新工具；能力清单落盘（U-BEH-4）保证下次会话立即生效，插件拦截保证关掉的能力当场失效。spike：起一个最小 MCP 服务，30 秒后 enable 一个工具，在 Claude Code 里观察；时间盒 30 分钟。处置：接受风险——不阻塞实现，结论写进 README。</p>
+<p><sup class="regid" title="登记单元 U-SPK-3 · 指纹 ea6f">U-SPK-3</sup> 假设：仓库改名后，<code>npx -y github:ZhenningLang/chrome-reading-list-mcp</code> 仍能拉到新仓库。If 不成立，旧配置的用户（主要是本人的几台机器）启动失败，需要手改配置。处置：接受风险——改名当天同步改本机配置（U-GATE-2），README 写清新地址。</p>
+<h2 id="场景化推演">场景化推演</h2>
+<table><thead><tr><th>Scenario</th><th>Actor / Context</th><th>Step-by-step path</th><th>System touchpoints</th><th>Exposed issue</th><th>Requirement / Contract</th></tr></thead><tbody><tr><td>打开标签页能力整理素材</td><td>作者，Chrome 开着 174 个标签页，Claude Code 会话已启动</td><td>点图标 → 勾「标签页与标签组」→ Chrome 弹窗申请权限 → 允许 → 插件推送能力清单 → 服务启用 <code>tabs_*</code> 工具 → Claude 调 <code>tabs_open</code> 把 64 个网址开进「写作·导读」分组并收起</td><td>弹窗、<code>chrome.permissions</code>、WebSocket、<code>capabilities.json</code>、MCP 工具列表</td><td>会话中途启用的工具，客户端是否立刻可见（U-SPK-2）</td><td>U-BEH-3、U-BEH-4、U-BEH-1、U-ACC-2</td></tr><tr><td>关掉历史记录能力</td><td>作者不想让 AI 看历史，会话里 AI 仍持有旧工具列表</td><td>取消勾选「历史记录」→ 插件交还权限、推送新清单 → AI 仍按旧列表调 <code>history_search</code> → 插件拒绝并返回「已在弹窗关闭」</td><td>弹窗、插件拦截、服务 <code>disable()</code></td><td>工具列表刷新不及时时，只靠插件拦截兜底</td><td>U-BEH-5、U-ACC-3</td></tr><tr><td>两个 AI 客户端同时在用</td><td>Claude Code 是 hub，kilo 是 peer</td><td>勾选变化 → hub 收到清单、写盘、转发 peer → 两边工具列表一致；hub 退出 → peer 接管端口并读盘</td><td>bridge hub/peer、<code>capabilities.json</code></td><td>peer 接管时不能丢清单</td><td>U-BEH-4、U-CTR-3、U-ACC-4</td></tr></tbody></table>
+<h2 id="方案">方案</h2>
+<p><strong>选定</strong>：服务端注册全部工具后按清单 <code>disable()</code>，靠 SDK 自带的 <code>list_changed</code> 通知；插件端按方法名前缀拦截。理由：改动集中在 server 与插件两处，bridge 只多一种消息类型。</p>
+<p><strong>被否</strong>：每次清单变化重建 <code>McpServer</code> 实例——会断开 stdio 连接；只做插件端拦截、工具全量列出——用户已选「勾了才出现」。</p>
+<h2 id="实施步骤">实施步骤</h2>
+<p>改动形状：</p>
+<pre class="wireframe" aria-label="页面示意"><code> chrome-toolbox-mcp/                # 原 chrome-reading-list-mcp
+ ├── package.json                   # name/bin/description/repository 改名
+ ├── README.md / README.zh-CN.md    # 改名 + 能力开关说明 + 迁移说明
+ ├── extension/
+ │   ├── manifest.json              # name 改；optional_permissions；action.default_popup；key 不动
+ │   ├── background.js              # handler 按能力分组；拦截；推送能力清单
++│   ├── capabilities.js            # 能力表：id、名字、说明、权限、方法名（插件内 SSOT）
++│   ├── popup.html
++│   └── popup.js
+ ├── src/
+ │   ├── cli.js                     # 日志前缀、HELP、doctor 打印能力清单
+ │   ├── config.js                  # 新目录与环境变量、旧目录迁移
+ │   ├── bridge.js                  # 处理 capabilities 消息、写盘、转发 peer
+ │   ├── server.js                  # 只留注册入口，按能力分文件注册
++│   ├── capabilityState.js         # 读写 capabilities.json，订阅变化
+ │   ├── readingList.js             # 方法名改为 readingList.*
++│   ├── tabs.js
++│   ├── bookmarks.js
++│   └── history.js
+ └── test/
+     ├── bridge.test.js             # 现有 9 条保留
++    ├── capabilities.test.js       # 清单流转、enable/disable、落盘、peer 转发
++    └── tools.test.js              # 标签页/书签/历史工具对假插件的调用与参数校验</code></pre>
+<p>调用树：</p>
+<pre data-lang="diff"><code> Bridge#attachExtension(ws).on(&quot;message&quot;)
+   ping → pong
++  type=capabilities → capabilityState.set(enabled) → 写盘 → 广播 peers
+   settle(response)
+ createServer(bridge, capabilityState)
++  registerReadingList / registerTabs / registerBookmarks / registerHistory
++  capabilityState.onChange → 每个能力的工具 enable()/disable()</code></pre>
+<p>验证方式：</p>
+<ol><li>U-SPK-1 已按官方文档验证，插件 manifest 直接用 optional_permissions。</li><li><code>npm test</code>：现有 9 条全绿（U-CTR-1/3）；新增测试覆盖 U-BEH-1/2/4/5/6。</li><li><code>node scripts/e2e.js</code> 保留为真实 Chrome 加载插件的冒烟测试并改到新名字；四个能力的协议集成另写假插件测试（<code>test/</code> 下），是补充不是替代。</li><li>人工：在本机 Chrome 加载插件，按「场景化推演」第 1、2 行走一遍，贴截图与工具调用结果。</li></ol>
+<h2 id="验收承诺">验收承诺</h2>
+<p><sup class="regid" title="登记单元 U-ACC-1 · 指纹 2fc2">U-ACC-1</sup> 阅读清单回归：新版插件加服务下，<code>reading_list_list</code> 返回 368 条（与 2026-10-29 备份条数一致），现有 9 条测试全绿。</p>
+<p><sup class="regid" title="登记单元 U-ACC-2 · 指纹 ae87">U-ACC-2</sup> 标签页能力：勾选后，一次 <code>tabs_open</code> 传 20 个网址加 <code>group:{title:&quot;测试&quot;,collapsed:true}</code>，Chrome 里出现一个名为「测试」、已收起、含 20 个标签页的分组；<code>tab_groups_list</code> 能列出它。再用 <code>tabs_close</code> 关掉这 20 个，返回的备份文件含 20 条；用该备份调 <code>tabs_open</code> 后，「测试」分组和 20 个标签页重新出现。</p>
+<p><sup class="regid" title="登记单元 U-ACC-3 · 指纹 98b0">U-ACC-3</sup> 拦截：任一能力未勾选时，直接对插件发该能力的方法调用，返回「已在弹窗关闭」错误，且 Chrome 状态无变化（自动化测试用假 chrome 对象断言没有 API 被调用）。</p>
+<p><sup class="regid" title="登记单元 U-ACC-4 · 指纹 8670">U-ACC-4</sup> 工具列表跟随：勾选或取消某能力后 2 秒内，已连接的服务进程发出 <code>notifications/tools/list_changed</code>，随后 <code>tools/list</code> 只含已勾选能力的工具；hub 退出后接管的 peer 工具列表与 <code>capabilities.json</code> 一致（自动化测试）。</p>
+<p><sup class="regid" title="登记单元 U-ACC-5 · 指纹 8ac3">U-ACC-5</sup> 改名与迁移：旧目录 <code>~/.chrome-reading-list-mcp</code> 存在时首次启动后，新目录里有原 token 与备份文件，旧插件连接不受影响；<code>doctor</code> 输出新名字和当前能力清单。</p>
+<pre data-lang="yaml"><code># spec-contract
+checks:
+  - &quot;现有 9 条测试全绿，reading_list_* 工具形状不变&quot;
+  - &quot;未勾选能力的调用在插件端被拒，Chrome API 未被调用&quot;
+  - &quot;勾选变化 2 秒内发 tools/list_changed，tools/list 只含已勾选能力&quot;
+  - &quot;tabs_open 20 个网址进一个已收起的命名分组&quot;
+  - &quot;旧配置目录自动迁移，token 与备份保留&quot;
+non_goals:
+  - &quot;网页自动化（读页面、点击、截图）&quot;
+  - &quot;删除历史与书签&quot;
+  - &quot;应用商店上架与 npm 发布&quot;
+  - &quot;已保存标签组的保存与删除&quot;
+validation_commands:
+  - &quot;npm test&quot;
+  - &quot;node scripts/e2e.js&quot;
+locked_decisions:
+  - &quot;名字 chrome-toolbox-mcp&quot;
+  - &quot;工具列表动态 + 插件端拦截&quot;
+  - &quot;首批能力：阅读清单、标签页与标签组、书签、历史记录&quot;
+  - &quot;扩展 ID 与端口不变&quot;
+derisk_spikes:
+  - type: &quot;2 第三方 API / SDK 实际契约&quot;
+    question: &quot;五个权限能否都放进 optional_permissions&quot;
+    method: &quot;Chrome 156 加载最小插件，调 chrome.permissions.request&quot;
+    status: &quot;verified&quot;
+  - type: &quot;2 第三方 API / SDK 实际契约&quot;
+    question: &quot;Claude Code 会话中途是否响应 tools/list_changed&quot;
+    method: &quot;最小 MCP 服务延时 enable 一个工具，在 Claude Code 观察&quot;
+    status: &quot;deferred(接受风险，能力清单落盘兜底)&quot;</code></pre>
+</section>
+</main>
+</div>
+
+</body>
+</html>

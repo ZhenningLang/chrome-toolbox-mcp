@@ -1,0 +1,64 @@
+{
+  "schema_version": 2,
+  "spec_file": "/private/tmp/claude-501/-Users-zhenninglang-Downloads-cloud-workspace-7---/ddffc7d8-bafb-498b-9efc-8874047db654/scratchpad/spec/approval.md",
+  "review_version": 1,
+  "anchors": {
+    "U-DEC-1": {
+      "kind": "unit",
+      "heading": "2. 要你拍的 3 件事",
+      "comments": [
+        {
+          "id": "c-2026-10-28T16-50-57-076Z-U-DEC-1-0",
+          "role": "user",
+          "kind": "decision",
+          "status": "resolved",
+          "classification": "decision",
+          "text": "在原仓库上直接改名。",
+          "response": "已写回 U-DEC-1，投影已刷新（§2 搬到 §7）",
+          "fingerprint_at_comment": "2a20",
+          "created_in_version": 1,
+          "resolved_in_version": 1
+        }
+      ],
+      "unit_id": "U-DEC-1"
+    },
+    "U-DEC-2": {
+      "kind": "unit",
+      "heading": "2. 要你拍的 3 件事",
+      "comments": [
+        {
+          "id": "c-2026-10-28T16-50-57-076Z-U-DEC-2-1",
+          "role": "user",
+          "kind": "decision",
+          "status": "resolved",
+          "classification": "decision",
+          "text": "默认只开阅读清单。",
+          "response": "已写回 U-DEC-2，投影已刷新（§2 搬到 §7）",
+          "fingerprint_at_comment": "4675",
+          "created_in_version": 1,
+          "resolved_in_version": 1
+        }
+      ],
+      "unit_id": "U-DEC-2"
+    },
+    "U-DEC-3": {
+      "kind": "unit",
+      "heading": "2. 要你拍的 3 件事",
+      "comments": [
+        {
+          "id": "c-2026-10-28T16-50-57-076Z-U-DEC-3-2",
+          "role": "user",
+          "kind": "decision",
+          "status": "resolved",
+          "classification": "decision",
+          "text": "能关，关之前先存备份。",
+          "response": "已写回 U-DEC-3，投影已刷新（§2 搬到 §7）",
+          "fingerprint_at_comment": "6207",
+          "created_in_version": 1,
+          "resolved_in_version": 1
+        }
+      ],
+      "unit_id": "U-DEC-3"
+    }
+  }
+}
