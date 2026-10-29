@@ -27,6 +27,14 @@ test("QA15 manifest key identity, required/optional permission boundaries and po
   assert.equal(readFileSync(new URL("extension/popup.html", root), "utf8").includes('type="module" src="popup.js"'), true);
 });
 
+test("popup width does not depend on the viewport, which starts tiny in a Chrome popup", () => {
+  const css = readFileSync(new URL("extension/popup.css", root), "utf8");
+  // Chrome lays the popup out in a near-zero viewport and then grows the window
+  // to the content, so any vw/vh-based limit collapses the panel to one column.
+  assert.equal(/\d+(vw|vh)/.test(css), false, "popup.css uses viewport units");
+  assert.match(css, /body \{[^}]*\bwidth: 360px/);
+});
+
 test("QA16 rename audit excludes only explicit migration and frozen compatibility text", () => {
   const fixturePath = "test/fixtures/reading-tools.json";
   const fixture = JSON.parse(readFileSync(new URL(fixturePath, root)));
