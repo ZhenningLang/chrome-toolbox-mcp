@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>chrome-toolbox-mcp · 审批投影</title>
+<style>
+:root { color-scheme: light; --bg: #f8fafc; --panel: #ffffff; --text: #111827; --muted: #64748b; --border: #dbe3ef; --accent: #1f4b99; }
+body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.55; }
+main { max-width: 960px; margin: 0 auto; padding: 32px 20px 48px; }
+header { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 18px; }
+section { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 22px; }
+h1, h2, h3, h4, h5, h6 { line-height: 1.2; margin: 1.4em 0 0.5em; }
+header h1 { margin-top: 0; }
+p { margin: 0.75em 0; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+ul { padding-left: 1.4rem; }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; background: #0f172a; color: #e5e7eb; padding: 14px; border-radius: 10px; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+td code, th code { overflow-wrap: anywhere; }
+th { background: #eef4ff; }
+.meta { color: var(--muted); font-size: 0.92rem; }
+.diagram-figure { margin: 1.2rem 0; padding: 12px; background: #ffffff; border: 1px solid var(--border); border-radius: 10px; overflow-x: auto; text-align: center; }
+.diagram-figure svg { height: auto; } /* 不设 max-width：宽图保持自然尺寸，figure 的 overflow-x 负责滚动 */
+table.state-transitions { margin-top: -0.4rem; font-size: 0.92rem; }
+table.state-transitions caption { caption-side: top; text-align: left; color: var(--muted); font-size: 0.82rem; padding: 0 0 6px; }
+table.state-transitions td.st-num { width: 2.2em; text-align: center; font-size: 1.1rem; color: var(--accent); }
+.image-figure { margin: 1.2rem 0; padding: 12px; background: #ffffff; border: 1px solid var(--border); border-radius: 10px; text-align: center; }
+.image-figure img { max-width: 100%; height: auto; border-radius: 6px; }
+.image-figure figcaption { color: var(--muted); font-size: 0.85rem; margin-top: 8px; }
+.badge { display: inline-block; background: #e0ecff; color: var(--accent); border-radius: 999px; padding: 2px 10px; font-size: 0.82rem; margin-right: 8px; }
+blockquote.alert { margin: 1rem 0; padding: 10px 14px; border-left: 4px solid var(--accent); background: #f2f6fd; border-radius: 0 8px 8px 0; }
+blockquote.alert p { margin: 0.3em 0; }
+blockquote.alert .alert-label { margin: 0 0 4px; font-weight: 600; font-size: 0.86rem; color: var(--accent); }
+blockquote.alert-tip { border-left-color: #047857; background: #eefaf4; }
+blockquote.alert-tip .alert-label { color: #047857; }
+blockquote.alert-warning { border-left-color: #b45309; background: #fdf6ec; }
+blockquote.alert-warning .alert-label { color: #b45309; }
+blockquote.alert-important { border-left-color: #7c3aed; background: #f6f2fd; }
+blockquote.alert-important .alert-label { color: #7c3aed; }
+blockquote.alert-caution { border-left-color: #b91c1c; background: #fdf2f2; }
+blockquote.alert-caution .alert-label { color: #b91c1c; }
+sup.regid { font-size: 0.66em; color: var(--muted); margin-left: 2px; white-space: nowrap; font-family: ui-monospace, monospace; }
+pre.wireframe { white-space: pre; overflow-x: auto; background: #fffdf5; color: #1f2937; border: 1px dashed #c8b98a; border-radius: 10px; padding: 14px 16px; line-height: 1.35; position: relative; }
+pre.wireframe::before { content: "页面示意（线框）"; display: block; color: #8a7a4a; font-size: 0.78rem; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin-bottom: 8px; }
+.layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 0 8px; max-width: 1220px; margin: 0 auto; }
+.layout main { margin: 0; min-width: 0; }
+.sidebar { position: sticky; top: 0; align-self: start; max-height: 100vh; overflow-y: auto; box-sizing: border-box; padding: 32px 0 32px 20px; font-size: 0.9rem; }
+.back-link { display: inline-block; background: var(--panel); border: 1px solid var(--border); border-radius: 999px; padding: 6px 14px; margin-bottom: 10px; font-weight: 600; }
+.toc-title { color: var(--muted); font-size: 0.8rem; margin: 8px 0 4px; }
+ul.toc { list-style: none; padding-left: 0; margin: 0; }
+ul.toc li { margin: 2px 0; }
+ul.toc a { display: block; padding: 4px 8px; border-radius: 6px; color: var(--text); overflow-wrap: anywhere; }
+ul.toc a:hover { background: #e8eefc; color: var(--accent); text-decoration: none; }
+h2[id], h3[id] { scroll-margin-top: 16px; }
+@media (max-width: 1100px) { .layout { display: block; } .sidebar { position: static; max-height: none; padding: 20px 20px 0; } }
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="sidebar"><a class="back-link" href="index.html">← 返回导航</a><div class="toc-title">本页目录</div><ul class="toc"><li><a href="#1.-现在哪儿坏了、不改会怎样">1. 现在哪儿坏了、不改会怎样</a></li><li><a href="#2.-要你拍的-0-件事">2. 要你拍的 0 件事</a></li><li><a href="#3.-撤不回来的与会变的">3. 撤不回来的与会变的</a></li><li><a href="#4.-代价、新增依赖与运维负担">4. 代价、新增依赖与运维负担</a></li><li><a href="#5.-分几期、多久、每期拿到什么、怎么算做完">5. 分几期、多久、每期拿到什么、怎么算做完</a></li><li><a href="#6.-最可能翻车的假设">6. 最可能翻车的假设</a></li><li><a href="#7.-已定死不用你看的">7. 已定死不用你看的</a></li><li><a href="#8.-没写进这一页的">8. 没写进这一页的</a></li></ul></nav>
+<main>
+<header>
+<span class="badge">plan</span>
+<h1>chrome-toolbox-mcp · 审批投影</h1>
+<div class="meta">Source: docs/specs/chrome-toolbox-mcp/approval.md</div>
+<div class="meta">Generated: 2026-10-28T17:31:57+00:00</div>
+</header>
+<section>
+<p>Audience:   P1 审批 owner Scope:      通用 Chrome 插件的审批投影——要拍的 3 件事、会变的东西、验收与风险 / Non-scope: 实现细节（见 overview.md） State:      approved Genre:      G-APPROVAL Code-Root:  /Users/zhenninglang/Projects/chrome-reading-list-mcp Prefixes:   U-DEC, U-BEH, U-GATE, U-SPK, U-ACC, U-NG, U-DEP, U-CTR, U-DIAG</p>
+<h1>chrome-toolbox-mcp · 审批投影</h1>
+<figure class="diagram-figure"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" data-d2-version="v0.9.0" preserveAspectRatio="xMinYMin meet" viewBox="0 0 1876 186" width="1876" height="186"><svg class="d2-3108971836 d2-svg" width="1876" height="186" viewBox="-5 -5 1876 186"><rect x="-5" y="-5" width="1876" height="186" rx="0" fill="#FFFFFF" class=" fill-N7" stroke-width="0" /><style type="text/css"><![CDATA[
+.d2-3108971836 .text-bold {
+	font-family: "d2-3108971836-font-bold";
+}
+@font-face {
+	font-family: d2-3108971836-font-bold;
+	src: url("data:application/font-woff;base64,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");
+}
+.d2-3108971836 .text-italic {
+	font-family: "d2-3108971836-font-italic";
+}
+@font-face {
+	font-family: d2-3108971836-font-italic;
+	src: url("data:application/font-woff;base64,d09GRgABAAAAAAYQAAoAAAAACtAAARhRAAAAAAAAAAAAAAAAAAAAAAAAAABPUy8yAAAA9AAAAGAAAABgW1SVeGNtYXAAAAFUAAAAOgAAADoBYP/OZ2x5ZgAAAZAAAACcAAAAnAh7zOdoZWFkAAACLAAAADYAAAA2G7Ur2mhoZWEAAAJkAAAAJAAAACQLeAioaG10eAAAAogAAAAQAAAAEAUgAIpsb2NhAAACmAAAAAoAAAAKAHwAZm1heHAAAAKkAAAAIAAAACAAHAD2bmFtZQAAAsQAAAMrAAAIMgntVzNwb3N0AAAF8AAAACAAAAAg/8YAMgADAeEBkAAFAAACigJY//EASwKKAlgARAFeADIBIwAAAgsFAwMEAwkCBCAAAHcAAAADAAAAAAAAAABBREJPAAEAIP//Au7/BgAAA9gBESAAAZMAAAAAAeYClAAAACAAAwAAAAEAAwABAAAADAAEAC4AAAAGAAQAAQACACAAt///AAAAIAC3////4f9LAAEAAAAAAAAAAQACAAAAAAAFACQAAAJuApQAAwAJAA8AEgAVAAAzEyEDAzM3NyMXAzMnJyMHBzcnExMHJIIByIKaBENa5Sig+SwfBEeBqUvsYKsClP1sAYBdf3/+W4hlZVfr6/4qAdbrAAAA//8ATwEMAMABhAIHAAMAOAEYAAAAAQAX//QAiABsAAsAABciJjU0NjMyFhUUBkYWGSccFhglDBwWGiwdFhksAAABAAAAARhRbgSoA18PPPUAAQPoAAAAANhdoMwAAAAA3WYvN/69/t0IHQPJAAIAAwACAAAAAAAAAAEAAAPY/u8AAAhA/r39vAgdA+gAwv/RAAAAAAAAAAAAAAAEAnQAJADIAAAA8gBPAPIAFwAAAC4ALgA4AE4AAAABAAAABACMAAwAZgAHAAEAAAAAAAAAAAAAAAAABAADeJyclN1uGlcUhT9ioE3/Liorcm6sc5lKzuBGcZTEV+M6VkZFkDKkP1JVaYAxIGBmxAw4zhP0um/Rt8hVH6NPUfW62psNYSKrVlAUaw1n/6yz9toH2Odf9qhU7wJ/1ZeGKxzWfzZ8hy/qTcN7nNU/M1zlqPa34RqD2lvDdR7UOoY/4V31D8Of8rj6m+G7HFQvDH/Oo+q+4S/3HP8Y/orHvFvhCjzld8MVDsgM32GfXw3vcQ+rWalyj2PDNb7m0HCdQ6DLmIIpYxKGOC4ZM2TBnJickJg5Yy6JGeAI8JlS6K8JkSLH8MZfI0IK5kRacUSBY0rIlIickVV8q1kpr7Sj9Jkrkm4+BSMiepoxISLBkTIkJSFmonUKCjKe06BBTl/5ZhTkeOSMmeKRMmdIgzYXNOkyYkyO40IrCbOQlEsKroi0v7MIUaZPTEJurBYkDJSnU36xZgc0cbTJNHa7crNU4QjHj5ot3CTG8S2e/ndbzMp912wilqqnaNhjqjyvdIIjVVz6+vyguOA5bid9ykxu12ig7GTWY3osdP4yP8kTJgnOHeATqoNCdx/HmX4HhKrITwR0eUmb13T126dDB58WXQJeaG6bDo7vaNPiXDMCxauzC3VMi19wfE+gMVI7Nn1Ec/l6Q2buFu7iDLnHjEy3QGYs9xfnxztNWHYoLbkjV1f0dY8kUvZAVJE9ixiaKzJ1xUy1XHsjN/0G5gg5LXS2789lG5a2e+stvibVHXYsjJNMbsXotql6H3jmSv95RAxI6WlEn5QZDQqu9W6viFgwxXGuPn6pW1Lgb3Kkz7W6JGamDAISrTMn07+R+SY07v2S7529JbJ5M93RyeZWu3SRysnWjF6reuuz0FSOtybQsKmmliMTlsqrm4r3Jdor8Q/V/bm+bikPCbSuTLJ/4ytwzDNOOGWkXaR6wnJzJq+ERJyqAhNijZI3841q9QiPEzyecMIJz3jygZZrNs74uBKf7f4+55zR5vTW26xi25zxolTt/zv/qWyP9T6Oh5uvpztP88FHuPYbjkrvZkdfA9mgpVV7vx0tImbCxR1sa+Hu4/0HAAD//wMAcqFRQAAAAwAA//UAAP/OADIAAAAAAAAAAAAAAAAAAAAAAAAAAA==");
+}]]></style><style type="text/css"><![CDATA[.shape {
+  shape-rendering: geometricPrecision;
+  stroke-linejoin: round;
+}
+.connection {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.blend {
+  mix-blend-mode: multiply;
+  opacity: 0.5;
+}
+
+		.d2-3108971836 .fill-N1{fill:#0A0F25;}
+		.d2-3108971836 .fill-N2{fill:#676C7E;}
+		.d2-3108971836 .fill-N7{fill:#FFFFFF;}
+		.d2-3108971836 .fill-B1{fill:#0A0F25;}
+		.d2-3108971836 .fill-B6{fill:#EEF1F8;}
+		.d2-3108971836 .stroke-B1{stroke:#0A0F25;}
+		.d2-3108971836 .stroke-B2{stroke:#676C7E;}.appendix text.text{fill:#0A0F25}.md{--color-fg-default:#0A0F25;--color-fg-muted:#676C7E;--color-fg-subtle:#9499AB;--color-canvas-default:#FFFFFF;--color-canvas-subtle:#EEF1F8;--color-border-default:#0A0F25;--color-border-muted:#676C7E;--color-neutral-muted:#EEF1F8;--color-accent-fg:#676C7E;--color-accent-emphasis:#676C7E;--color-attention-subtle:#676C7E;--color-danger-fg:red;}.light-code{display: block}.dark-code{display: none}]]></style><g class="5L2g"><g class="shape" ><rect x="12" y="47" width="64" height="80" stroke="#0A0F25" fill="#EEF1F8" class=" stroke-B1 fill-B6" style="stroke-width:2;" /></g><text x="44" y="92.5" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px">你</text></g><g class="5by556qX"><g class="shape" ><rect x="400" y="12" width="271" height="66" stroke="#0A0F25" fill="#EEF1F8" class=" stroke-B1 fill-B6" style="stroke-width:2;" /></g><text x="535.5" y="50.5" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px">插件弹窗里的开关 · 已拍 ②</text></g><g class="5rWP6KeI5Zmo"><g class="shape" ><rect x="1461" y="12" width="393" height="66" stroke="#0A0F25" fill="#EEF1F8" class=" stroke-B1 fill-B6" style="stroke-width:2;" /></g><text x="1657.5" y="50.5" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px">阅读清单、标签页、书签、历史 · 已拍 ③</text></g><g class="5Yqp5omL"><g class="shape" ><rect x="1023" y="12" width="124" height="66" stroke="#0A0F25" fill="#EEF1F8" class=" stroke-B1 fill-B6" style="stroke-width:2;" /></g><text x="1085" y="50.5" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px">写作助手</text></g><g class="5LuT5bqT"><g class="shape" ><rect x="400" y="98" width="251" height="66" stroke="#0A0F25" fill="#EEF1F8" class=" stroke-B1 fill-B6" style="stroke-width:2;" /></g><text x="525.5" y="136.5" fill="#0A0F25" class="text-bold fill-N1" style="text-anchor:middle;font-size:16px">网上的项目仓库 · 已拍 ①</text></g><g class="KOS9oCAtJmd0OyDlvLnnqpcpWzBd"><marker id="mk-d2-3108971836-3488378134" markerWidth="10" markerHeight="12" refX="7" refY="6" viewBox="0 0 10 12" orient="auto" markerUnits="userSpaceOnUse"> <polygon points="0,0 10,6 0,12" fill="#0A0F25" class="connection fill-B1" stroke-width="2" /> </marker><path d="M 78 74.666 L 106 74.666 S 116 74.666 116 64.666 L 116 55 S 116 45 126 45 L 396 45" stroke="#0A0F25" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-end="url(#mk-d2-3108971836-3488378134)" mask="url(#d2-3108971836)" /><text x="223" y="51" fill="#676C7E" class="text-italic fill-N2" style="text-anchor:middle;font-size:16px">勾选或取消一项能力</text></g><g class="KOW8ueeqlyAtJmd0OyDliqnmiYspWzBd"><path d="M 673 45 L 1019 45" stroke="#0A0F25" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-end="url(#mk-d2-3108971836-3488378134)" mask="url(#d2-3108971836)" /><text x="847" y="51" fill="#676C7E" class="text-italic fill-N2" style="text-anchor:middle;font-size:16px">只把勾上的能力交给助手</text></g><g class="KOWKqeaJiyAtJmd0OyDmtY_op4jlmagpWzBd"><path d="M 1149 45 L 1457 45" stroke="#0A0F25" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-end="url(#mk-d2-3108971836-3488378134)" mask="url(#d2-3108971836)" /><text x="1304" y="51" fill="#676C7E" class="text-italic fill-N2" style="text-anchor:middle;font-size:16px">读、开、分组、收起</text></g><g class="KOS9oCAtJmd0OyDku5PlupMpWzBd"><path d="M 78 101.333 L 106 101.333 S 116 101.333 116 111.333 L 116 121 S 116 131 126 131 L 396 131" stroke="#0A0F25" fill="none" class="connection stroke-B1" style="stroke-width:2;" marker-end="url(#mk-d2-3108971836-3488378134)" mask="url(#d2-3108971836)" /><text x="223.5" y="137" fill="#676C7E" class="text-italic fill-N2" style="text-anchor:middle;font-size:16px">把项目改名</text></g><mask id="d2-3108971836" maskUnits="userSpaceOnUse" x="-5" y="-5" width="1876" height="186">
+<rect x="-5" y="-5" width="1876" height="186" fill="white"></rect>
+<rect x="134" y="35" width="178" height="21" fill="black"></rect>
+<rect x="739" y="35" width="216" height="21" fill="black"></rect>
+<rect x="1215" y="35" width="178" height="21" fill="black"></rect>
+<rect x="173" y="121" width="101" height="21" fill="black"></rect>
+</mask></svg></svg>
+</figure>
+<p>这张图想让读者看懂：已拍的三件事分别落在「项目叫什么、放哪」「新插件默认开哪些开关」「助手能不能替你关标签页」上。</p>
+<h2 id="1.-现在哪儿坏了、不改会怎样">1. 现在哪儿坏了、不改会怎样</h2>
+<p>现在的插件只会管阅读清单，标签页一个都碰不了：你开着的 174 个标签页，助手只能读会话文件猜，没法替你分组或收起（<sup class="regid" title="登记单元 U-DIAG-1 · 指纹 3937">U-DIAG-1</sup>）。不改的话，每多一种浏览器里的东西要整理，就得再写一个一次性插件。</p>
+<h3 id="核心概念">核心概念</h3>
+<ul><li><strong>能力开关</strong>：插件弹窗里的一个勾选框，管一类浏览器里的东西。例：勾上「标签页与标签组」，助手才能替你建分组；取消后，助手再调用会被插件当场拒绝。</li><li><strong>浏览器授权</strong>：Chrome 给插件的权限。例：第一次勾「历史记录」时 Chrome 弹窗问你「允许读取浏览历史吗」，你点拒绝，开关就弹回关闭。</li></ul>
+<h3 id="页面示意">页面示意</h3>
+<p>点工具栏上的插件图标，弹出下面这个小面板。布局是一列开关，每个开关一句说明；顶部一行显示和助手的连接状态。勾选时 Chrome 会弹出自己的授权确认框，拒绝则开关弹回；取消勾选会同时交还授权。</p>
+<pre class="wireframe" aria-label="页面示意"><code>┌──────────────────────────────────────┐
+│ Chrome Toolbox      ● 已连接写作助手 │
+├──────────────────────────────────────┤
+│ [x] 阅读清单                          │
+│     读、加、标记已读、删除（删前备份）│
+│ [ ] 标签页与标签组                    │
+│     列出、打开、分组、改名、收起      │
+│ [ ] 书签                              │
+│     搜索、添加、移动                  │
+│ [ ] 历史记录                          │
+│     按关键词和时间搜索（只读）        │
+└──────────────────────────────────────┘</code></pre>
+<h2 id="2.-要你拍的-0-件事">2. 要你拍的 0 件事</h2>
+<p>三件事你已在 2026-10-29 拍完，结论见第 7 节，这一页没有剩下要拍的事。</p>
+<h2 id="3.-撤不回来的与会变的">3. 撤不回来的与会变的</h2>
+<p>撤不回来的有两件，都要你当场点头。第一件是网上仓库改名（<sup class="regid" title="登记单元 U-GATE-1 · 指纹 8b96">U-GATE-1</sup>）。第二件是改你本机的助手配置，让它每次都现问插件开了哪些能力，不再缓存一天（<sup class="regid" title="登记单元 U-GATE-2 · 指纹 c8fa">U-GATE-2</sup>）。改前会备份原配置。</p>
+<p>会变的有六处。标签页能力的具体动作，包括关标签页前存备份，见（<sup class="regid" title="登记单元 U-BEH-1 · 指纹 5e08">U-BEH-1</sup>），书签和历史的具体动作见（<sup class="regid" title="登记单元 U-BEH-2 · 指纹 9b04">U-BEH-2</sup>）。插件多了一个弹窗；阅读清单的授权和现在一样装插件时就有，它的开关只管给不给助手用，另外三项勾选时才要授权（<sup class="regid" title="登记单元 U-BEH-3 · 指纹 47eb">U-BEH-3</sup>）。开关变化会实时告诉助手，并记在本机，下次启动直接生效（<sup class="regid" title="登记单元 U-BEH-4 · 指纹 b2d6">U-BEH-4</sup>）。关着的能力，或授权已被你在浏览器设置里收回的能力，插件当场拒绝；新旧版本混着用时阅读清单照常能用（<sup class="regid" title="登记单元 U-BEH-5 · 指纹 fee9">U-BEH-5</sup>）。名字和配置目录换新，旧目录自动搬过去（<sup class="regid" title="登记单元 U-BEH-6 · 指纹 6e7b">U-BEH-6</sup>）。</p>
+<h2 id="4.-代价、新增依赖与运维负担">4. 代价、新增依赖与运维负担</h2>
+<p>没有新增依赖，只多一个插件弹窗页面和几项浏览器授权（<sup class="regid" title="登记单元 U-DEP-1 · 指纹 4f8c">U-DEP-1</sup>）。比不做贵在哪：未评估工时，[推断] 一轮单次开发就能做完，改动集中在服务和插件两处。</p>
+<h2 id="5.-分几期、多久、每期拿到什么、怎么算做完">5. 分几期、多久、每期拿到什么、怎么算做完</h2>
+<p>一期做完。五条验收都能当场测出来：</p>
+<p>阅读清单照旧，读出来还是 368 条，老测试全过（<sup class="regid" title="登记单元 U-ACC-1 · 指纹 2fc2">U-ACC-1</sup>）。</p>
+<p>勾上标签页能力后，一次开 20 个网址，进一个叫「测试」的已收起分组；关掉再按备份打开，分组和标签页都回来（<sup class="regid" title="登记单元 U-ACC-2 · 指纹 ae87">U-ACC-2</sup>）。</p>
+<p>关着的能力被调用时，插件拒绝且浏览器没有任何变化（<sup class="regid" title="登记单元 U-ACC-3 · 指纹 98b0">U-ACC-3</sup>）。</p>
+<p>勾选变化 2 秒内，助手看到的工具列表跟着变（<sup class="regid" title="登记单元 U-ACC-4 · 指纹 8670">U-ACC-4</sup>）。</p>
+<p>旧配置目录里的备份和口令自动搬到新目录（<sup class="regid" title="登记单元 U-ACC-5 · 指纹 8ac3">U-ACC-5</sup>）。</p>
+<h2 id="6.-最可能翻车的假设">6. 最可能翻车的假设</h2>
+<p>「标签页、书签、历史三项授权能等勾选时再要」已经查实：Chrome 官方文档列出的例外里没有它们，装上后勾选时会真的弹授权框再确认一次；阅读清单因为默认就开，授权改为装插件时就拿，和现在一样（<sup class="regid" title="登记单元 U-SPK-1 · 指纹 f5cb">U-SPK-1</sup>）。其次是「助手在会话中途能看到新开的能力」：接受风险，不行就新开一个会话，开关已记在本机（<sup class="regid" title="登记单元 U-SPK-2 · 指纹 3e32">U-SPK-2</sup>）。最后是「改名后旧的安装地址还能用」：接受风险，改名当天同步改本机配置（<sup class="regid" title="登记单元 U-SPK-3 · 指纹 ea6f">U-SPK-3</sup>）。</p>
+<h2 id="7.-已定死不用你看的">7. 已定死不用你看的</h2>
+<p>你拍了三件事：在原仓库上直接改名（<sup class="regid" title="登记单元 U-DEC-1 · 指纹 abc9">U-DEC-1</sup>）；新插件默认只开阅读清单（<sup class="regid" title="登记单元 U-DEC-2 · 指纹 5fe2">U-DEC-2</sup>）；助手能关标签页，关之前先存备份，也能按备份重新打开（<sup class="regid" title="登记单元 U-DEC-3 · 指纹 4b6e">U-DEC-3</sup>）。</p>
+<p>阅读清单的六个工具名字和用法一个不改（<sup class="regid" title="登记单元 U-CTR-1 · 指纹 d637">U-CTR-1</sup>）。插件身份编号不变，不用重新配对（<sup class="regid" title="登记单元 U-CTR-2 · 指纹 3967">U-CTR-2</sup>）。只在本机通信、网页无法冒充插件这条安全线不动（<sup class="regid" title="登记单元 U-CTR-3 · 指纹 d075">U-CTR-3</sup>）。端口不变，新旧插件和服务混着用时阅读清单照常能用（<sup class="regid" title="登记单元 U-CTR-4 · 指纹 6e35">U-CTR-4</sup>）。</p>
+<h2 id="8.-没写进这一页的">8. 没写进这一页的</h2>
+<p><sup class="regid" title="登记单元 U-NG-*（整类）">U-NG-*</sup> 四条不做清单（网页自动化、删历史和书签、上架与发布、已保存标签组）——去向：overview.md「边界」节。 <sup class="regid" title="登记单元 U-DIAG-2 · 指纹 0d06">U-DIAG-2</sup> 本机助手配置怎么缓存工具列表的细节——去向：overview.md「现状诊断」节。</p>
+</section>
+</main>
+</div>
+<style>
+.mz-bar { display:flex; gap:6px; justify-content:flex-end; margin-bottom:6px; }
+.mz-bar button { border:1px solid var(--border); background:#f8fafc; color:var(--text); border-radius:6px; padding:2px 10px; font-size:0.8rem; cursor:pointer; }
+.mz-bar button:hover { background:#e8eefc; }
+.mz-viewport { overflow:hidden; position:relative; touch-action:none; background:#fff; }
+.mz-viewport svg { cursor:grab; user-select:none; }
+</style>
+<script>
+document.querySelectorAll("figure.diagram-figure > svg").forEach(function (svg) {
+  var fig = svg.parentElement;
+  var natW = (svg.width.baseVal && svg.width.baseVal.value) || (svg.viewBox.baseVal && svg.viewBox.baseVal.width);
+  var natH = (svg.height.baseVal && svg.height.baseVal.value) || (svg.viewBox.baseVal && svg.viewBox.baseVal.height);
+  if (!natW || !natH) return;
+  var vp = document.createElement("div"); vp.className = "mz-viewport";
+  fig.insertBefore(vp, svg); vp.appendChild(svg);
+  var bar = document.createElement("div"); bar.className = "mz-bar";
+  bar.innerHTML = '<button data-z="out">－</button><button data-z="in">＋</button>'
+    + '<button data-z="fit">适应</button><button data-z="one">1:1</button>';
+  fig.insertBefore(bar, vp);
+  vp.style.height = Math.min(natH + 8, window.innerHeight * 0.72) + "px";
+  var s = 1, tx = 0, ty = 0;
+  svg.style.transformOrigin = "0 0";
+  function apply() { svg.style.transform = "translate(" + tx + "px," + ty + "px) scale(" + s + ")"; }
+  function fit() {
+    s = Math.min(1, vp.clientWidth / natW, vp.clientHeight / natH);
+    tx = (vp.clientWidth - natW * s) / 2; ty = (vp.clientHeight - natH * s) / 2; apply();
+  }
+  function one() { s = 1; tx = 0; ty = 0; apply(); }
+  function zoomAt(px, py, f) {
+    var ns = Math.min(8, Math.max(0.1, s * f));
+    tx = px - (px - tx) * (ns / s); ty = py - (py - ty) * (ns / s); s = ns; apply();
+  }
+  if (Math.min(vp.clientWidth / natW, vp.clientHeight / natH) >= 0.75) { fit(); } else { one(); }
+  bar.addEventListener("click", function (e) {
+    var z = e.target.dataset && e.target.dataset.z; if (!z) return;
+    if (z === "in") zoomAt(vp.clientWidth / 2, vp.clientHeight / 2, 1.3);
+    else if (z === "out") zoomAt(vp.clientWidth / 2, vp.clientHeight / 2, 0.77);
+    else if (z === "fit") fit(); else one();
+  });
+  vp.addEventListener("wheel", function (e) {
+    e.preventDefault();
+    var r = vp.getBoundingClientRect();
+    zoomAt(e.clientX - r.left, e.clientY - r.top, e.deltaY < 0 ? 1.15 : 0.87);
+  }, { passive: false });
+  var drag = null;
+  vp.addEventListener("pointerdown", function (e) {
+    drag = { x: e.clientX - tx, y: e.clientY - ty };
+    vp.setPointerCapture(e.pointerId); svg.style.cursor = "grabbing";
+  });
+  vp.addEventListener("pointermove", function (e) {
+    if (drag) { tx = e.clientX - drag.x; ty = e.clientY - drag.y; apply(); }
+  });
+  ["pointerup", "pointercancel"].forEach(function (ev) {
+    vp.addEventListener(ev, function () { drag = null; svg.style.cursor = "grab"; });
+  });
+  vp.addEventListener("dblclick", function () {
+    (s === 1 ? fit : one)();
+  });
+});
+</script>
+</body>
+</html>

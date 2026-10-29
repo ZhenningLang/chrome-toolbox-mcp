@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync, chmodSync, existsSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync, chmodSync, existsSync, renameSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { randomBytes } from "node:crypto";
@@ -9,14 +9,21 @@ export const DEFAULT_PORT = 17893;
 // field in its manifest). Add the Chrome Web Store ID here once published.
 export const KNOWN_EXTENSION_IDS = ["ccclijbaodgdphbciifmfgnihbadlloj"];
 
-export function loadConfig(env = process.env) {
-  const extra = (env.READING_LIST_MCP_EXTENSION_IDS || "")
+export function loadConfig(env = process.env, userHome = homedir()) {
+  const setting = (name) => env[`CHROME_TOOLBOX_MCP_${name}`] ?? env[`READING_LIST_MCP_${name}`];
+  const extra = (setting("EXTENSION_IDS") || "")
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
+  const homeDir = setting("HOME") || join(userHome, ".chrome-toolbox-mcp");
+  const oldDir = join(userHome, ".chrome-reading-list-mcp");
+  if (!setting("HOME") && !existsSync(homeDir) && existsSync(oldDir)) {
+    try { renameSync(oldDir, homeDir); }
+    catch (err) { if (err.code !== "ENOENT" || !existsSync(homeDir)) throw err; }
+  }
   return {
-    port: Number(env.READING_LIST_MCP_PORT) || DEFAULT_PORT,
-    homeDir: env.READING_LIST_MCP_HOME || join(homedir(), ".chrome-reading-list-mcp"),
+    port: Number(setting("PORT")) || DEFAULT_PORT,
+    homeDir,
     allowedExtensionIds: [...KNOWN_EXTENSION_IDS, ...extra],
   };
 }

@@ -1,118 +1,136 @@
-# Chrome Reading List MCP
+# Chrome Toolbox MCP
 
-[中文说明](https://github.com/ZhenningLang/chrome-reading-list-mcp/blob/main/README.zh-CN.md)
+[中文说明](README.zh-CN.md)
 
-Let your AI assistant read and tidy up your **Chrome reading list** — the "Add to reading list" items in Chrome's side panel.
+Let your AI assistant organize your Chrome reading list, tabs, tab groups and bookmarks, or search history. One Chrome extension, one local MCP server, and a checkbox for each capability.
 
-Works with any MCP client: Claude Desktop, Claude Code, Cursor, Codex, opencode, Kilo, Windsurf, VS Code and more.
+Works with MCP clients including Claude Desktop, Claude Code, Cursor, Codex, opencode and Kilo. **Only reading list access is enabled by default.**
 
-Things you can ask:
+## Setup
 
-- "What's on my reading list about AI agents? Summarize the three newest."
-- "Group my unread items by topic and tell me which ones are older than a month."
-- "I've read the Rust and Postgres articles — mark them as read."
-- "Remove everything from news sites I added before June."
-- "Add these five links to my reading list."
-- "Export my reading list as Markdown."
+Requires Chrome 120+ and Node.js 18+.
 
-## Setup (about 2 minutes)
-
-You need Chrome 120 or newer and [Node.js](https://nodejs.org) 18 or newer.
-
-### 1. Install the Chrome extension
-
-<!-- Replace with the Chrome Web Store link once published. -->
-1. Download `extension.zip` from the [latest release](https://github.com/ZhenningLang/chrome-reading-list-mcp/releases/latest) and unzip it.
-2. Open `chrome://extensions`, turn on **Developer mode** (top right).
-3. Click **Load unpacked** and pick the unzipped `extension` folder.
-
-The extension only has the `readingList` permission and only talks to your own computer (`127.0.0.1`).
-
-### 2. Add the server to your AI client
+1. Download and unzip `extension.zip` from the [latest release](https://github.com/ZhenningLang/chrome-toolbox-mcp/releases/latest), or use the repository's `extension` directory.
+2. Open `chrome://extensions`, enable **Developer mode**, choose **Load unpacked**, and select `extension`.
+3. Add the local server to your MCP client, then restart the client.
 
 **Claude Code**
 
 ```bash
-claude mcp add -s user chrome-reading-list -- npx -y github:ZhenningLang/chrome-reading-list-mcp
+claude mcp add -s user chrome-toolbox -- npx -y github:ZhenningLang/chrome-toolbox-mcp
 ```
 
-**Claude Desktop** — Settings → Developer → Edit Config, then add:
+**Claude Desktop / Cursor**: add this to your MCP configuration:
 
 ```json
 {
   "mcpServers": {
-    "chrome-reading-list": { "command": "npx", "args": ["-y", "github:ZhenningLang/chrome-reading-list-mcp"] }
+    "chrome-toolbox": { "command": "npx", "args": ["-y", "github:ZhenningLang/chrome-toolbox-mcp"] }
   }
 }
 ```
 
-**Cursor** — same JSON in `~/.cursor/mcp.json`.
-
-**Codex** — add to `~/.codex/config.toml`:
+**Codex** (`~/.codex/config.toml`):
 
 ```toml
-[mcp_servers.chrome-reading-list]
+[mcp_servers.chrome-toolbox]
 command = "npx"
-args = ["-y", "github:ZhenningLang/chrome-reading-list-mcp"]
+args = ["-y", "github:ZhenningLang/chrome-toolbox-mcp"]
 ```
 
-**opencode** — add to `~/.config/opencode/opencode.json`:
+**opencode** (`~/.config/opencode/opencode.json`) / **Kilo** (`~/.config/kilo/kilo.json`):
 
 ```json
 {
   "mcp": {
-    "chrome-reading-list": {
+    "chrome-toolbox": {
       "type": "local",
-      "command": ["npx", "-y", "github:ZhenningLang/chrome-reading-list-mcp"],
+      "command": ["npx", "-y", "github:ZhenningLang/chrome-toolbox-mcp"],
       "enabled": true
     }
   }
 }
 ```
 
-**Kilo CLI** — same block in `~/.config/kilo/kilo.json`.
-
-Restart the client. That's it.
-
-### 3. Check it works
+Check the connection and current capabilities:
 
 ```bash
-npx -y github:ZhenningLang/chrome-reading-list-mcp doctor
+npx -y github:ZhenningLang/chrome-toolbox-mcp doctor
 ```
 
-`OK: connected, 365 entries in the reading list` means you're set.
+`doctor` reports the configuration directory, local port, enabled capabilities and reading-list connection check. When reading-list access is off, that check is explicitly skipped rather than accessing a disabled capability.
+
+## Capability Switches
+
+Click the **Chrome Toolbox** toolbar icon. The popup shows connection status, four checkboxes, descriptions and permission status.
+
+| Capability | Default | Browser access |
+|---|---|---|
+| 阅读清单 / Reading list | On | Required at installation; checkbox controls assistant access only |
+| 标签页与标签组 / Tabs and groups | Off | Requests `tabs` and `tabGroups` on click |
+| 书签 / Bookmarks | Off | Requests `bookmarks` on click |
+| 历史记录 / History | Off | Requests `history` on click, read-only tools |
+
+Declining Chrome's permission prompt leaves the capability off. Unchecking an optional capability also returns its permissions. Changes persist locally; startup reconciles saved switches with permissions still granted by Chrome. The server lists only enabled tools, and the extension independently rejects disabled or revoked capabilities.
+
+Some MCP clients may not refresh tools during a session. **Start a new session after enabling a capability if its tools do not appear.** Disabling access still takes effect immediately in the extension. If a lazy MCP wrapper uses `--static-catalogue`, remove that option from its configuration to allow dynamic tool-list notifications; this project does not edit client configuration automatically.
 
 ## Tools
 
-| Tool | What it does |
+| Capability | Tools |
 |---|---|
-| `reading_list_list` | List entries; filter by read/unread and keywords; always reports the total count |
-| `reading_list_add` | Add pages (skips ones already there) |
-| `reading_list_update` | Mark read/unread, rename |
-| `reading_list_remove` | Remove by URL — **backs up the whole list first** |
-| `reading_list_restore` | Bring entries back from a backup |
-| `reading_list_export` | Save the list as Markdown, JSON or CSV |
+| Reading list | `reading_list_list`, `reading_list_add`, `reading_list_update`, `reading_list_remove`, `reading_list_restore`, `reading_list_export` |
+| Tabs and groups | `tabs_list`, `tabs_open`, `tabs_move`, `tab_groups_list`, `tab_groups_update`, `tabs_close` |
+| Bookmarks | `bookmarks_search`, `bookmarks_add`, `bookmarks_move` |
+| History | `history_search` |
+
+The six reading-list tool schemas and response shapes are unchanged. List supports status/search/pagination; add skips existing URLs; remove backs up the whole list first; restore re-adds missing entries; export supports Markdown, JSON and CSV.
+
+`tabs_open` opens 1-100 URLs in the background by default. Use `group: {"title":"Writing","collapsed":true}` to create a named, collapsed group. `tabs_move` accepts 1-500 tab IDs and exactly one destination: `groupId`, `newGroup`, or `ungroup:true`. Group colors: grey, blue, red, yellow, green, pink, purple, cyan, orange. Group titles are limited to 80 characters.
+
+`tabs_close` accepts 1-500 tab IDs and saves titles, URLs and group metadata in `~/.chrome-toolbox-mcp/backups/tabs-*.json` before closing anything. A failed backup closes nothing. Reopen using `tabs_open` with `backupPath`; optional `urls` filters entries in that backup. Named groups are recreated, but a backup is not a full browser-session snapshot: form state, navigation stacks and original tab IDs are not restored.
+
+Pending navigation targets are preserved. If any selected tab has no restorable URL, the whole close request is rejected and all selected tabs remain open. Existing group titles are restored without applying the 80-character limit for new group inputs. Opening/restoring a batch is not transactional if Chrome rejects an individual URL: already-created tabs remain.
+
+`bookmarks_search` includes parent folder paths and defaults to 50 results (maximum 500). Add/move accepts exactly one of `parentId` or `parentPath`; missing path folders are created progressively. Omitting `url` when adding creates a folder. There is no bookmark deletion tool.
+
+The first `parentPath` segment must name an existing root folder in Chrome's UI language (for example, `Bookmarks bar` in English). Alternatively, use a `parentId` returned by search.
+
+`history_search` accepts ISO 8601 date-times with `Z` or a UTC offset (such as `+08:00`), or epoch-millisecond start/end times. Plain dates and local date-times without a timezone are rejected. Start defaults to 24 hours ago, text to all entries, and maxResults to 100 (maximum 1000). History tools are read-only.
 
 ## Safety
 
-- **Nothing leaves your computer.** The extension talks only to the server on `127.0.0.1`; the server talks only to your AI client.
-- **Websites can't use it.** The server only accepts the extension's own origin.
-- **Deletes are undoable.** Every removal first saves the full list to `~/.chrome-reading-list-mcp/backups/`; ask your assistant to restore from it.
-- Your AI assistant does see your reading list titles and URLs when it uses these tools — that's the point, but keep it in mind.
+- Browser-to-server traffic stays on `127.0.0.1:17893`. The server accepts the fixed extension Origin; websites cannot use the bridge. Additional local clients authenticate with an owner-only token.
+- Your AI client receives the data you enable, so its own provider/data policies still apply. Local transport does not mean an AI client cannot send results to its model provider.
+- Reading-list removal and tab closure write owner-only backups before destructive calls. Backups may contain private titles and URLs.
+- Multiple MCP processes share one extension through a hub; capability changes propagate to peers, including after reconnection and hub takeover.
+- No page-content reading, clicking, screenshots, bookmark deletion, history deletion or saved-tab-group management.
+
+## Migration From The Old Name
+
+The package was previously `chrome-reading-list-mcp`, and the extension was **Reading List MCP**. Update the unpacked extension in place and change client commands to `npx -y github:ZhenningLang/chrome-toolbox-mcp`. The fixed extension ID and port are unchanged; reading-list calls work with mixed old/new versions.
+
+When the new default directory does not exist, the server renames `~/.chrome-reading-list-mcp` to `~/.chrome-toolbox-mcp`, preserving the token, backups and exports. Explicit HOME overrides are not migrated. If both directories already exist, neither is merged or overwritten.
+
+Use `CHROME_TOOLBOX_MCP_HOME`, `CHROME_TOOLBOX_MCP_PORT` and `CHROME_TOOLBOX_MCP_EXTENSION_IDS` for new configuration. Legacy `READING_LIST_MCP_*` variables remain supported, with new variables taking priority. The frozen reading-list export schema retains its historical default-path description for compatibility; actual default exports use the new directory.
+
+The new install address is the supported address. This code does not rename the GitHub repository or edit your client configuration; those are separate owner-approved operations. Do not rely on redirects from the old install address.
 
 ## Troubleshooting
 
-- **"The Chrome extension is not connected"** — make sure Chrome is open and the extension is enabled. If the toolbar icon shows `…`, it's waiting for the server; the AI client starts the server when it launches.
-- **Several AI clients at once** is fine: the first one hosts the connection and the others share it.
-- **Port 17893 is taken by something else** — not configurable yet; please open an issue.
+- **Extension not connected**: keep Chrome open and the unpacked extension enabled. The `...` badge means it is waiting for the MCP server. The AI client starts the server.
+- **Tool missing**: check the popup, grant the requested permissions, and start a new assistant session if needed.
+- **Port conflict**: the extension uses 17893. Server PORT overrides are for diagnostics; changing the server alone does not change the extension's port.
 
 ## Development
 
 ```bash
 npm install
-npm test                 # unit tests with a fake extension
-npm run test:e2e         # real Chrome for Testing + the real extension
+npm test                  # unit and fake-extension protocol tests
+npm run test:e2e          # real Chrome for Testing, throwaway profile
 ```
+
+Real Chrome smoke tests use the default port. Stop other copies before running them; set `CHROME_BIN` if Chrome for Testing is installed elsewhere. Optional permission dialogs and real-profile data require manual acceptance testing.
 
 ## License
 

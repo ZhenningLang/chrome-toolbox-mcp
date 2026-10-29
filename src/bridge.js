@@ -13,12 +13,13 @@
 import { WebSocketServer, WebSocket } from "ws";
 import { randomUUID } from "node:crypto";
 import { readToken } from "./config.js";
+import { CapabilityState } from "./capabilityState.js";
 
 const PEER_HELLO_TIMEOUT_MS = 2000;
 
 export const NOT_CONNECTED =
   "The Chrome extension is not connected. Make sure Chrome is running and the " +
-  '"Reading List MCP" extension is installed and enabled (chrome://extensions). ' +
+  '"Chrome Toolbox" extension is installed and enabled (chrome://extensions). ' +
   "If Chrome was just started, wait a few seconds and try again.";
 
 export class Bridge {
@@ -35,6 +36,11 @@ export class Bridge {
     this.extensionWaiters = [];
     this.hubSocket = null; // peer: socket to the hub
     this.pending = new Map(); // id -> {resolve, reject, timer}
+    this.capabilityState = new CapabilityState(homeDir, log);
+    this.peers = new Set();
+    this.closed = false;
+    this.connecting = null;
+    this.reconnectTimer = null;
   }
 
   async start() {
@@ -47,10 +53,19 @@ export class Bridge {
       if (err.code !== "EADDRINUSE") throw err;
       this.mode = "peer";
       this.log(`port ${this.port} in use, running as peer`);
+      try { await this.#connectToHub(); }
+      catch (err) {
+        this.capabilityState.set(["readingList"], false);
+        this.log(`hub subscription unavailable; using readingList: ${err.message}`);
+        this.#scheduleReconnect();
+      }
     }
   }
 
   async close() {
+    if (this.closed) return;
+    this.closed = true;
+    clearTimeout(this.reconnectTimer);
     for (const { reject, timer } of this.pending.values()) {
       clearTimeout(timer);
       reject(new Error("bridge closed"));
@@ -70,6 +85,7 @@ export class Bridge {
       return this.#request(ext, method, params);
     }
     const target = await this.#connectToHub();
+    if (!target) return this.call(method, params);
     return this.#request(target, method, params);
   }
 
@@ -110,6 +126,9 @@ export class Bridge {
         return;
       }
       ws.send(JSON.stringify({ type: "welcome" }));
+      this.peers.add(ws);
+      ws.send(JSON.stringify({ type: "capabilities", enabled: this.capabilityState.enabled }));
+      ws.on("close", () => this.peers.delete(ws));
       ws.on("message", (data) => this.#onPeerMessage(ws, data));
     });
   }
@@ -122,6 +141,15 @@ export class Bridge {
       const msg = safeParse(raw);
       if (!msg) return;
       if (msg.type === "ping") return ws.send(JSON.stringify({ type: "pong" }));
+      if (msg.type === "capabilities" || (msg.type === "hello" && msg.role === "extension")) {
+        if (ws !== this.extension) return;
+        try {
+          this.capabilityState.set(msg.type === "hello" ? (msg.capabilities ?? ["readingList"]) : msg.enabled);
+          const update = JSON.stringify({ type: "capabilities", enabled: this.capabilityState.enabled });
+          for (const peer of this.peers) if (peer.readyState === WebSocket.OPEN) peer.send(update);
+        } catch (err) { this.log(`capabilities update failed: ${err.message}`); }
+        return;
+      }
       this.#settle(msg);
     });
     ws.on("close", () => {
@@ -161,19 +189,36 @@ export class Bridge {
   // --------------------------------------------------------------- peer side
 
   async #connectToHub() {
-    if (this.hubSocket?.readyState === WebSocket.OPEN) return this.hubSocket;
+    if (this.closed) throw new Error("bridge closed");
+    if (this.mode === "hub") return null;
+    if (this.connecting) return this.connecting;
+    this.connecting = this.#openHubConnection();
+    try { return await this.connecting; }
+    finally { this.connecting = null; }
+  }
+
+  async #openHubConnection() {
     // The hub may have exited; try to take over its port first.
     try {
       await this.#listen();
       this.mode = "hub";
+      this.capabilityState.reload();
       this.log("previous hub gone, promoted to hub");
-      return this.#waitForExtension();
+      return null;
     } catch (err) {
       if (err.code !== "EADDRINUSE") throw err;
     }
+    if (this.hubSocket?.readyState === WebSocket.OPEN) return this.hubSocket;
     const ws = new WebSocket(`ws://127.0.0.1:${this.port}`);
-    await new Promise((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error("timed out connecting to hub")), 5000);
+    ws.on("message", (raw) => {
+      const msg = safeParse(raw);
+      if (msg?.type === "capabilities") {
+        try { this.capabilityState.set(msg.enabled, false); }
+        catch (err) { this.log(`hub capabilities rejected: ${err.message}`); }
+      } else this.#settle(msg);
+    });
+    try { await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => { ws.terminate(); reject(new Error("timed out connecting to hub")); }, 5000);
       const fail = (err) => {
         clearTimeout(timer);
         reject(err);
@@ -186,13 +231,27 @@ export class Bridge {
         if (safeParse(raw)?.type === "welcome") resolve();
         else reject(new Error("hub refused connection"));
       });
-    });
-    ws.on("message", (raw) => this.#settle(safeParse(raw)));
+    }); } catch (err) {
+      ws.terminate();
+      throw err;
+    }
     ws.on("close", () => {
       if (this.hubSocket === ws) this.hubSocket = null;
+      this.#scheduleReconnect();
     });
     this.hubSocket = ws;
     return ws;
+  }
+
+  #scheduleReconnect() {
+    if (this.closed || this.mode !== "peer") return;
+    clearTimeout(this.reconnectTimer);
+    this.reconnectTimer = setTimeout(() => {
+      this.#connectToHub().catch((err) => {
+        this.log(`hub reconnect failed: ${err.message}`);
+        this.#scheduleReconnect();
+      });
+    }, 250);
   }
 
   // ------------------------------------------------------------------ shared

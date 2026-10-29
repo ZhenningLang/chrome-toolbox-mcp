@@ -1,6 +1,6 @@
 // End-to-end check against a real Chrome: launches Chrome for Testing with the
 // extension loaded into a throwaway profile, starts the MCP server over stdio
-// the way an AI client would, and exercises every tool.
+// the way an AI client would, and exercises the default reading-list tools.
 //
 //   CHROME_BIN=/path/to/chrome node scripts/e2e.js
 //
@@ -49,7 +49,7 @@ await client.connect(
   new StdioClientTransport({
     command: process.execPath,
     args: [join(root, "src/cli.js")],
-    env: { ...process.env, READING_LIST_MCP_HOME: home },
+    env: { ...process.env, CHROME_TOOLBOX_MCP_HOME: home },
     stderr: "inherit",
   }),
 );
