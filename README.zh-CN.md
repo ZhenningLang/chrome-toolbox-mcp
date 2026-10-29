@@ -12,12 +12,19 @@
 
 1. 从[最新发布](https://github.com/ZhenningLang/chrome-toolbox-mcp/releases/latest)下载并解压 `extension.zip`，也可使用仓库里的 `extension` 目录。
 2. 打开 `chrome://extensions`，开启开发者模式，点「加载已解压的扩展程序」，选择 `extension` 文件夹。
-3. 给 AI 客户端添加 MCP 服务并重启客户端。
+3. 先全局安装一次本地服务：
+
+   ```bash
+   npm install -g github:ZhenningLang/chrome-toolbox-mcp
+   ```
+
+   升级时重跑同一句。助手每开一个会话就会启动一份服务，所以直接运行命令更省：用 `npx -y github:…` 启动，每个会话会多一个 `npm exec` 进程（macOS 实测约 54 MB，服务本身约 41 MB），每次启动还要访问 GitHub。只想试用时 `npx` 仍然可用。
+4. 给 AI 客户端添加 MCP 服务并重启客户端。
 
 **Claude Code**：
 
 ```bash
-claude mcp add -s user chrome-toolbox -- npx -y github:ZhenningLang/chrome-toolbox-mcp
+claude mcp add -s user chrome-toolbox -- chrome-toolbox-mcp
 ```
 
 **Claude Desktop / Cursor** 的 MCP 配置：
@@ -25,7 +32,7 @@ claude mcp add -s user chrome-toolbox -- npx -y github:ZhenningLang/chrome-toolb
 ```json
 {
   "mcpServers": {
-    "chrome-toolbox": { "command": "npx", "args": ["-y", "github:ZhenningLang/chrome-toolbox-mcp"] }
+    "chrome-toolbox": { "command": "chrome-toolbox-mcp" }
   }
 }
 ```
@@ -34,8 +41,7 @@ claude mcp add -s user chrome-toolbox -- npx -y github:ZhenningLang/chrome-toolb
 
 ```toml
 [mcp_servers.chrome-toolbox]
-command = "npx"
-args = ["-y", "github:ZhenningLang/chrome-toolbox-mcp"]
+command = "chrome-toolbox-mcp"
 ```
 
 **opencode** 的 `~/.config/opencode/opencode.json` 或 **Kilo** 的 `~/.config/kilo/kilo.json`：
@@ -45,7 +51,7 @@ args = ["-y", "github:ZhenningLang/chrome-toolbox-mcp"]
   "mcp": {
     "chrome-toolbox": {
       "type": "local",
-      "command": ["npx", "-y", "github:ZhenningLang/chrome-toolbox-mcp"],
+      "command": ["chrome-toolbox-mcp"],
       "enabled": true
     }
   }
@@ -55,7 +61,7 @@ args = ["-y", "github:ZhenningLang/chrome-toolbox-mcp"]
 检查配置、能力清单与连接：
 
 ```bash
-npx -y github:ZhenningLang/chrome-toolbox-mcp doctor
+chrome-toolbox-mcp doctor
 ```
 
 `doctor` 显示配置目录、端口、当前能力和阅读清单连接检查。阅读清单关闭时会明确跳过该项检查，不会越过开关访问。
@@ -108,18 +114,19 @@ npx -y github:ZhenningLang/chrome-toolbox-mcp doctor
 
 ## 从旧名迁移
 
-旧包名为 `chrome-reading-list-mcp`，旧插件名为 **Reading List MCP**。原位置更新并重新加载插件，将客户端命令改为 `npx -y github:ZhenningLang/chrome-toolbox-mcp`。扩展 ID 与端口不变；新旧插件和服务混用时，阅读清单仍兼容。
+旧包名为 `chrome-reading-list-mcp`，旧插件名为 **Reading List MCP**。原位置更新并重新加载插件，安装新包（`npm install -g github:ZhenningLang/chrome-toolbox-mcp`），将客户端命令改为 `chrome-toolbox-mcp`。扩展 ID 与端口不变；新旧插件和服务混用时，阅读清单仍兼容。
 
 新默认目录不存在时，服务把 `~/.chrome-reading-list-mcp` 整体改名为 `~/.chrome-toolbox-mcp`，保留 token、备份、导出。显式指定 HOME 时不迁移；两个目录都已存在时，不合并、不覆盖。
 
 新变量为 `CHROME_TOOLBOX_MCP_HOME`、`CHROME_TOOLBOX_MCP_PORT`、`CHROME_TOOLBOX_MCP_EXTENSION_IDS`。旧 `READING_LIST_MCP_*` 仍可用，新变量优先。为保持公开工具 schema 兼容，阅读清单导出的默认路径说明仍保留旧文案；实际默认导出写入新目录。
 
-GitHub 仓库改名与本机 MCP 配置更新是需 owner 单独确认的外部操作，本轮代码不会执行。请使用新安装地址，不依赖旧地址跳转。
+GitHub 仓库已改名为 `ZhenningLang/chrome-toolbox-mcp`。旧地址仍会跳转，但请用新地址安装。服务不会修改你的客户端配置。
 
 ## 常见问题
 
 - **插件未连接**：确认 Chrome 开着且插件启用。`...` 徽标表示等待本地 MCP 服务；服务由助手客户端启动。
 - **新工具没出现**：查看面板开关与权限，再新开助手会话。
+- **找不到 `chrome-toolbox-mcp` 命令**：客户端的 PATH 可能不含 npm 全局目录（macOS 桌面应用常见）。改用绝对路径：`"command"` 填 `which node` 的输出，`"args"` 填 `["<npm root -g 的输出>/chrome-toolbox-mcp/src/cli.js"]`。
 - **端口冲突**：插件固定使用 17893。服务 PORT 变量用于诊断，单改服务变量不会自动改插件端口。
 
 ## 开发
