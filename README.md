@@ -12,12 +12,19 @@ Requires Chrome 120+ and Node.js 18+.
 
 1. Download and unzip `extension.zip` from the [latest release](https://github.com/ZhenningLang/chrome-toolbox-mcp/releases/latest), or use the repository's `extension` directory.
 2. Open `chrome://extensions`, enable **Developer mode**, choose **Load unpacked**, and select `extension`.
-3. Add the local server to your MCP client, then restart the client.
+3. Install the local server once:
+
+   ```bash
+   npm install -g github:ZhenningLang/chrome-toolbox-mcp
+   ```
+
+   Run the same command again to upgrade. Each assistant session starts its own server process, so a direct command keeps that small: launching through `npx -y github:…` adds an `npm exec` process per session (about 54 MB on macOS, versus about 41 MB for the server) and resolves GitHub on every start. `npx` still works if you only want to try it.
+4. Add the local server to your MCP client, then restart the client.
 
 **Claude Code**
 
 ```bash
-claude mcp add -s user chrome-toolbox -- npx -y github:ZhenningLang/chrome-toolbox-mcp
+claude mcp add -s user chrome-toolbox -- chrome-toolbox-mcp
 ```
 
 **Claude Desktop / Cursor**: add this to your MCP configuration:
@@ -25,7 +32,7 @@ claude mcp add -s user chrome-toolbox -- npx -y github:ZhenningLang/chrome-toolb
 ```json
 {
   "mcpServers": {
-    "chrome-toolbox": { "command": "npx", "args": ["-y", "github:ZhenningLang/chrome-toolbox-mcp"] }
+    "chrome-toolbox": { "command": "chrome-toolbox-mcp" }
   }
 }
 ```
@@ -34,8 +41,7 @@ claude mcp add -s user chrome-toolbox -- npx -y github:ZhenningLang/chrome-toolb
 
 ```toml
 [mcp_servers.chrome-toolbox]
-command = "npx"
-args = ["-y", "github:ZhenningLang/chrome-toolbox-mcp"]
+command = "chrome-toolbox-mcp"
 ```
 
 **opencode** (`~/.config/opencode/opencode.json`) / **Kilo** (`~/.config/kilo/kilo.json`):
@@ -45,7 +51,7 @@ args = ["-y", "github:ZhenningLang/chrome-toolbox-mcp"]
   "mcp": {
     "chrome-toolbox": {
       "type": "local",
-      "command": ["npx", "-y", "github:ZhenningLang/chrome-toolbox-mcp"],
+      "command": ["chrome-toolbox-mcp"],
       "enabled": true
     }
   }
@@ -55,7 +61,7 @@ args = ["-y", "github:ZhenningLang/chrome-toolbox-mcp"]
 Check the connection and current capabilities:
 
 ```bash
-npx -y github:ZhenningLang/chrome-toolbox-mcp doctor
+chrome-toolbox-mcp doctor
 ```
 
 `doctor` reports the configuration directory, local port, enabled capabilities and reading-list connection check. When reading-list access is off, that check is explicitly skipped rather than accessing a disabled capability.
@@ -108,18 +114,19 @@ The first `parentPath` segment must name an existing root folder in Chrome's UI 
 
 ## Migration From The Old Name
 
-The package was previously `chrome-reading-list-mcp`, and the extension was **Reading List MCP**. Update the unpacked extension in place and change client commands to `npx -y github:ZhenningLang/chrome-toolbox-mcp`. The fixed extension ID and port are unchanged; reading-list calls work with mixed old/new versions.
+The package was previously `chrome-reading-list-mcp`, and the extension was **Reading List MCP**. Update the unpacked extension in place and install the new package (`npm install -g github:ZhenningLang/chrome-toolbox-mcp`) and change client commands to `chrome-toolbox-mcp`. The fixed extension ID and port are unchanged; reading-list calls work with mixed old/new versions.
 
 When the new default directory does not exist, the server renames `~/.chrome-reading-list-mcp` to `~/.chrome-toolbox-mcp`, preserving the token, backups and exports. Explicit HOME overrides are not migrated. If both directories already exist, neither is merged or overwritten.
 
 Use `CHROME_TOOLBOX_MCP_HOME`, `CHROME_TOOLBOX_MCP_PORT` and `CHROME_TOOLBOX_MCP_EXTENSION_IDS` for new configuration. Legacy `READING_LIST_MCP_*` variables remain supported, with new variables taking priority. The frozen reading-list export schema retains its historical default-path description for compatibility; actual default exports use the new directory.
 
-The new install address is the supported address. This code does not rename the GitHub repository or edit your client configuration; those are separate owner-approved operations. Do not rely on redirects from the old install address.
+The GitHub repository is now `ZhenningLang/chrome-toolbox-mcp`. The old address still redirects, but install from the new one. The server never edits your client configuration.
 
 ## Troubleshooting
 
 - **Extension not connected**: keep Chrome open and the unpacked extension enabled. The `...` badge means it is waiting for the MCP server. The AI client starts the server.
 - **Tool missing**: check the popup, grant the requested permissions, and start a new assistant session if needed.
+- **`chrome-toolbox-mcp` not found**: the client's PATH may not include npm's global bin directory (common for desktop apps on macOS). Use the absolute paths instead: `"command": "<which node>"` with `"args": ["<npm root -g>/chrome-toolbox-mcp/src/cli.js"]`, filling in the output of `which node` and `npm root -g`.
 - **Port conflict**: the extension uses 17893. Server PORT overrides are for diagnostics; changing the server alone does not change the extension's port.
 
 ## Development
