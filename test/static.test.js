@@ -35,6 +35,17 @@ test("popup width does not depend on the viewport, which starts tiny in a Chrome
   assert.match(css, /body \{[^}]*\bwidth: 360px/);
 });
 
+test("manifest icons exist at their declared pixel size", () => {
+  const manifest = JSON.parse(readFileSync(new URL("extension/manifest.json", root)));
+  assert.deepEqual(Object.keys(manifest.icons), ["16", "32", "48", "128"]);
+  for (const [size, path] of Object.entries(manifest.icons)) {
+    const png = readFileSync(new URL(`extension/${path}`, root));
+    // PNG IHDR: width and height are big-endian uint32 at bytes 16 and 20.
+    assert.equal(png.readUInt32BE(16), Number(size), path);
+    assert.equal(png.readUInt32BE(20), Number(size), path);
+  }
+});
+
 test("QA16 rename audit excludes only explicit migration and frozen compatibility text", () => {
   const fixturePath = "test/fixtures/reading-tools.json";
   const fixture = JSON.parse(readFileSync(new URL(fixturePath, root)));
